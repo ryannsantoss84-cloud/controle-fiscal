@@ -1,11 +1,4 @@
-import { useDashboard } from "@/hooks/useDashboard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Users,
-  TrendingUp,
+TrendingUp,
   CalendarDays
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -144,7 +137,7 @@ export default function Dashboard() {
                         item.due_date === new Date().toISOString().split('T')[0] ? 'bg-orange-500/10 text-orange-700 border border-orange-500/20' :
                           'bg-primary/10 text-primary border border-primary/20'
                         }`}>
-                        {format(new Date(item.due_date), "dd/MM")}
+                        {formatDate(item.due_date).substring(0, 5)}
                       </span>
                     </div>
                   </div>

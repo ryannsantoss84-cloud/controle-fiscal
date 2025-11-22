@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useSorting } from "@/hooks/useSorting";
 import { SortableColumn } from "@/components/shared/SortableColumn";
@@ -322,7 +323,7 @@ export default function Deadlines() {
                             ? format(new Date(deadline.reference_date), "MMM/yyyy", { locale: ptBR })
                             : '-'}
                         </div>
-                        <div className="text-sm font-mono">{format(new Date(deadline.due_date), "dd/MM/yyyy")}</div>
+                        <div className="text-sm font-mono">{formatDate(deadline.due_date)}</div>
                         <div><StatusBadge status={deadline.status} variant="compact" /></div>
                         <div className="text-right">
                           {/* Ações simplificadas para lista */}
