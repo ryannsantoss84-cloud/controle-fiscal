@@ -165,7 +165,7 @@ export default function Clients() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground font-mono">{client.document}</p>
+                        <p className="text-sm text-muted-foreground font-mono">{client.cnpj}</p>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="space-y-1.5">
@@ -253,7 +253,7 @@ export default function Clients() {
                       <div key={client.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 p-4 items-center hover:bg-muted/5 transition-colors">
                         <div>
                           <div className="font-medium text-sm">{client.name}</div>
-                          <div className="text-xs text-muted-foreground font-mono">{client.document}</div>
+                          <div className="text-xs text-muted-foreground font-mono">{client.cnpj}</div>
                         </div>
                         <div className="text-sm text-muted-foreground truncate">{client.email || '-'}</div>
                         <div className="text-sm text-muted-foreground">{client.phone || '-'}</div>

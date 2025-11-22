@@ -28,10 +28,11 @@ import {
 } from "@/components/ui/form";
 import { useEffect, useState } from "react";
 import { brazilStates, brazilCities, businessActivityLabels } from "@/lib/brazil-locations";
+import { formatDocument } from "@/lib/formatters";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  document: z.string().min(1, "CNPJ é obrigatório"),
+  cnpj: z.string().min(1, "CNPJ é obrigatório"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
   tax_regime: z.enum(["simples_nacional", "lucro_presumido", "lucro_real"]),
@@ -60,7 +61,7 @@ export function ClientEditDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      document: "",
+      cnpj: "",
       email: "",
       phone: "",
       tax_regime: "simples_nacional",
@@ -76,7 +77,7 @@ export function ClientEditDialog({
       setSelectedState(state);
       form.reset({
         name: client.name,
-        document: client.document,
+        cnpj: client.cnpj,
         email: client.email || "",
         phone: client.phone || "",
         tax_regime: client.tax_regime || "simples_nacional",
@@ -93,7 +94,7 @@ export function ClientEditDialog({
     await updateClient.mutateAsync({
       id: client.id,
       name: values.name,
-      document: values.document,
+      cnpj: values.cnpj,
       tax_regime: values.tax_regime,
       business_activity: values.business_activity,
       state: values.state,
@@ -129,12 +130,20 @@ export function ClientEditDialog({
             />
             <FormField
               control={form.control}
-              name="document"
+              name="cnpj"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>CNPJ *</FormLabel>
                   <FormControl>
-                    <Input placeholder="00.000.000/0000-00" {...field} />
+                    <Input
+                      placeholder="00.000.000/0000-00"
+                      {...field}
+                      onChange={(e) => {
+                        const formatted = formatDocument(e.target.value);
+                        field.onChange(formatted);
+                      }}
+                      maxLength={18}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
