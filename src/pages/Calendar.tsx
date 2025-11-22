@@ -1,4 +1,12 @@
-Filter, Plus, Building2, X, Search, TrendingUp, AlertCircle, CheckCircle2
+import React, { useState, useMemo } from "react";
+import { format, startOfMonth, endOfMonth, isSameMonth, isToday, addMonths, subMonths, getDay, startOfWeek, endOfWeek, addDays, isSameDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Receipt, CreditCard,
+  Filter, Plus, Building2, X, Search, TrendingUp, AlertCircle, CheckCircle2
 } from "lucide-react";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useInstallments } from "@/hooks/useInstallments";
@@ -20,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatDate } from "@/lib/utils";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -201,344 +210,203 @@ export default function Calendar() {
             >
               <ChevronRight className="h-5 w-5" />
             </Button>
-            <div className="w-px h-6 bg-border mx-1" />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCurrentDate(new Date())}
-              className="font-medium"
-            >
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
               Hoje
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="border-none shadow-lg bg-gradient-to-br from-primary/10 to-primary/5 hover:shadow-xl transition-shadow">
+        {/* Filtros e Estatísticas */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Filtros */}
+          <Card className="lg:col-span-3 border-none shadow-elegant glass-card">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total</p>
-                  <p className="text-3xl font-bold mt-1">{stats.total}</p>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Filter className="h-4 w-4" />
+                  Filtros:
                 </div>
-                <TrendingUp className="w-8 h-8 text-primary opacity-50" />
+
+                <Select value={typeFilter} onValueChange={(v: any) => setTypeFilter(v)}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Tipos</SelectItem>
+                    <SelectItem value="obligation">Obrigações</SelectItem>
+                    <SelectItem value="tax">Impostos</SelectItem>
+                    <SelectItem value="installments">Parcelamentos</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={clientFilter} onValueChange={setClientFilter}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Clientes</SelectItem>
+                    {clients?.map((client: any) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Status</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="overdue">Atrasado</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 px-2 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4 mr-1" />
+                    Limpar
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Hoje</p>
-                  <p className="text-3xl font-bold mt-1 text-blue-600">{stats.today}</p>
-                </div>
-                <CalendarIcon className="w-8 h-8 text-blue-500 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-lg bg-gradient-to-br from-red-500/10 to-red-500/5 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Atrasadas</p>
-                  <p className="text-3xl font-bold mt-1 text-red-600">{stats.overdue}</p>
-                </div>
-                <AlertCircle className="w-8 h-8 text-red-500 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-lg bg-gradient-to-br from-green-500/10 to-green-500/5 hover:shadow-xl transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">Concluídas</p>
-                  <p className="text-3xl font-bold mt-1 text-green-600">{stats.completed}</p>
-                </div>
-                <CheckCircle2 className="w-8 h-8 text-green-500 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Mini Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-primary/5 border-primary/10 shadow-sm">
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-2xl font-bold text-primary">{stats.today}</span>
+                <span className="text-xs text-muted-foreground font-medium mt-1">Vencem Hoje</span>
+              </CardContent>
+            </Card>
+            <Card className="bg-destructive/5 border-destructive/10 shadow-sm">
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <span className="text-2xl font-bold text-destructive">{stats.overdue}</span>
+                <span className="text-xs text-muted-foreground font-medium mt-1">Atrasados</span>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        {/* Filtros Avançados */}
-        <Card className="border-none shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Busca */}
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por título ou cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              {/* Filtro de Tipo */}
-              <div className="flex gap-2">
-                <Button
-                  variant={typeFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTypeFilter('all')}
-                  className="gap-2"
-                >
-                  Todos
-                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{stats.total}</Badge>
-                </Button>
-                <Button
-                  variant={typeFilter === 'obligation' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTypeFilter('obligation')}
-                  className="gap-2"
-                >
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  Obrigações
-                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{stats.byType.obligation}</Badge>
-                </Button>
-                <Button
-                  variant={typeFilter === 'tax' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTypeFilter('tax')}
-                  className="gap-2"
-                >
-                  <div className="w-2 h-2 rounded-full bg-orange-500" />
-                  Impostos
-                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{stats.byType.tax}</Badge>
-                </Button>
-                <Button
-                  variant={typeFilter === 'installments' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTypeFilter('installments')}
-                  className="gap-2"
-                >
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  Parcelamentos
-                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{stats.byType.installment}</Badge>
-                </Button>
-              </div>
-
-              {/* Filtro de Cliente */}
-              <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Todos os clientes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os clientes</SelectItem>
-                  {clients.map((client: any) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Filtro de Status */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
-                  <SelectItem value="paid">Pago</SelectItem>
-                  <SelectItem value="overdue">Atrasado</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Limpar Filtros */}
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="gap-2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                  Limpar
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Legenda Interativa */}
-        <Card className="border-none shadow-lg bg-gradient-to-r from-muted/30 to-muted/10">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-6 items-center justify-center">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-sm" />
-                <span className="text-sm font-medium">Obrigações</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500 shadow-sm" />
-                <span className="text-sm font-medium">Impostos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
-                <span className="text-sm font-medium">Parcelamentos</span>
-              </div>
-              <div className="w-px h-4 bg-border" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-md">
-                  15
-                </div>
-                <span className="text-sm font-medium">Hoje</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-xs">
-                  S
-                </div>
-                <span className="text-sm font-medium">Final de Semana</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Grid do Calendário */}
-      <Card className="border-none shadow-2xl overflow-hidden">
-        <CardContent className="p-0">
-          {/* Cabeçalho dos Dias */}
-          <div className="grid grid-cols-7 bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border-b">
-            {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day, idx) => (
-              <div
-                key={day}
-                className={`py-4 text-center text-sm font-bold uppercase tracking-wider ${idx === 0 || idx === 6 ? 'text-muted-foreground' : 'text-foreground'
-                  }`}
-              >
-                {day}
-              </div>
-            ))}</div>
+      <Card className="border-none shadow-elegant glass-card overflow-hidden">
+        <div className="grid grid-cols-7 border-b bg-muted/30">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
+            <div key={day} className="p-3 text-center text-sm font-semibold text-muted-foreground">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 auto-rows-fr bg-card">
+          {calendarWeeks.map((week, weekIndex) => (
+            <React.Fragment key={weekIndex}>
+              {week.map((day, dayIndex) => {
+                const dateKey = day.toISOString().split('T')[0];
+                const dayItems = itemsByDate[dateKey] || [];
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isTodayDate = isToday(day);
 
-          {/* Dias */}
-          <div className="grid grid-cols-7 auto-rows-fr bg-border gap-px">
-            {calendarWeeks.map((week, weekIndex) => (
-              <React.Fragment key={weekIndex}>
-                {week.map((day) => {
-                  const dayStr = format(day, "yyyy-MM-dd");
-                  const items = itemsByDate[dayStr] || [];
-                  const isCurrentMonth = isSameMonth(day, currentDate);
-                  const isCurrentDay = isToday(day);
-                  const dayOfWeek = getDay(day);
-                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      onClick={() => handleDayClick(day, items)}
-                      className={`
-                        min-h-[140px] p-3 transition-all cursor-pointer group relative
-                        bg-card hover:bg-accent/10 hover:shadow-lg
-                        ${!isCurrentMonth ? "bg-muted/20 text-muted-foreground" : ""}
-                        ${isWeekend ? "bg-muted/10" : ""}
-                        ${isCurrentDay ? "ring-2 ring-primary ring-inset" : ""}
-                      `}
-                    >
-                      {/* Número do Dia */}
-                      <div className="flex justify-between items-start mb-2">
-                        <span
-                          className={`
-                            text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all
-                            ${isCurrentDay
-                              ? "bg-primary text-primary-foreground shadow-lg scale-110"
-                              : "text-muted-foreground group-hover:text-foreground group-hover:bg-muted group-hover:scale-105"
-                            }
-                            ${!isCurrentMonth ? "opacity-40" : ""}
-                          `}
-                        >
-                          {format(day, "d")}
-                        </span>
-
-                        {/* Contador de Itens */}
-                        {items.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 px-1.5 text-[10px] font-bold bg-primary/20 text-primary"
-                          >
-                            {items.length}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Lista de Itens */}
-                      <div className="space-y-1">
-                        {items.slice(0, 3).map((item: any) => {
-                          let colorClass = "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30";
-                          if (item.type === 'tax') colorClass = "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30";
-                          if (item.type === 'installment') colorClass = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
-
-                          const isCompleted = item.status === 'completed' || item.status === 'paid';
-                          const isOverdue = item.status === 'overdue';
-
-                          return (
-                            <div
-                              key={item.id}
-                              className={`
-                                text-[10px] px-2 py-1 rounded-md border truncate transition-all hover:scale-105
-                                ${colorClass}
-                                ${isCompleted ? "opacity-50 line-through" : ""}
-                                ${isOverdue ? "border-red-500 bg-red-500/10 text-red-600" : ""}
-                              `}
-                              title={`${item.displayTitle} - ${item.displayClient?.name || ''}`}
-                            >
-                              <div className="flex items-center gap-1">
-                                <div className={`w-1 h-1 rounded-full ${isOverdue ? 'bg-red-500' : 'bg-current'}`} />
-                                <span className="truncate font-semibold">
-                                  {item.displayClient?.name && <span className="opacity-75 mr-1">{item.displayClient.name.split(' ')[0]}:</span>}
-                                  {item.displayTitle}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                        {items.length > 3 && (
-                          <div className="text-[10px] font-bold text-primary pl-2">
-                            +{items.length - 3} mais
-                          </div>
-                        )}
-                      </div>
+                return (
+                  <div
+                    key={dayIndex}
+                    className={`
+                      min-h-[120px] p-2 border-r border-b transition-colors relative group
+                      ${!isCurrentMonth ? "bg-muted/10 text-muted-foreground" : "bg-background"}
+                      ${isTodayDate ? "bg-primary/5" : ""}
+                      hover:bg-muted/20 cursor-pointer
+                    `}
+                    onClick={() => handleDayClick(day, dayItems)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={`
+                          text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full
+                          ${isTodayDate ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground"}
+                        `}
+                      >
+                        {format(day, "d")}
+                      </span>
+                      {dayItems.length > 0 && (
+                        <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                          {dayItems.length}
+                        </Badge>
+                      )}
                     </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </div>
-        </CardContent>
+
+                    <div className="space-y-1">
+                      {dayItems.slice(0, 3).map((item: any, index: number) => (
+                        <div
+                          key={index}
+                          className={`
+                            text-[10px] px-1.5 py-1 rounded border truncate flex items-center gap-1
+                            ${item.status === 'completed' || item.status === 'paid' ? 'bg-green-500/10 text-green-700 border-green-200' :
+                              item.status === 'overdue' ? 'bg-red-500/10 text-red-700 border-red-200' :
+                                'bg-blue-500/10 text-blue-700 border-blue-200'}
+                          `}
+                          title={item.displayTitle}
+                        >
+                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.type === 'tax' ? 'bg-red-500' :
+                              item.type === 'installment' ? 'bg-purple-500' : 'bg-blue-500'
+                            }`} />
+                          {item.displayTitle}
+                        </div>
+                      ))}
+                      {dayItems.length > 3 && (
+                        <div className="text-[10px] text-muted-foreground pl-1 font-medium">
+                          + {dayItems.length - 3} mais
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
       </Card>
 
       {/* Modal de Detalhes do Item */}
-      <Dialog open={!!selectedItem && !isDayModalOpen} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-md">
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent>
           {selectedItem && (
             <>
               <DialogHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`p-3 rounded-xl shadow-lg ${selectedItem.type === 'tax' ? 'bg-orange-100 text-orange-600' :
-                    selectedItem.type === 'installment' ? 'bg-emerald-100 text-emerald-600' :
-                      'bg-blue-100 text-blue-600'
-                    }`}>
-                    {selectedItem.type === 'obligation' && <CalendarIcon className="h-6 w-6" />}
-                    {selectedItem.type === 'tax' && <Receipt className="h-6 w-6" />}
-                    {selectedItem.type === 'installment' && <CreditCard className="h-6 w-6" />}
-                  </div>
-                  <div>
-                    <DialogTitle className="text-xl">{selectedItem.displayTitle}</DialogTitle>
-                    <DialogDescription className="text-xs uppercase tracking-wider font-semibold mt-1">
-                      {selectedItem.type === 'obligation' ? 'Obrigação Fiscal' :
-                        selectedItem.type === 'tax' ? 'Imposto' : 'Parcelamento'}
-                    </DialogDescription>
-                  </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant={
+                    selectedItem.type === 'tax' ? 'destructive' :
+                      selectedItem.type === 'installment' ? 'secondary' : 'outline'
+                  }>
+                    {selectedItem.type === 'tax' ? 'Imposto' :
+                      selectedItem.type === 'installment' ? 'Parcelamento' : 'Obrigação'}
+                  </Badge>
+                  {selectedItem.recurrence && selectedItem.recurrence !== 'none' && (
+                    <Badge variant="outline" className="text-xs">
+                      Recorrente
+                    </Badge>
+                  )}
                 </div>
+                <DialogTitle className="text-xl">{selectedItem.displayTitle}</DialogTitle>
+                <DialogDescription>
+                  Detalhes do vencimento selecionado
+                </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-4 py-4">
@@ -593,28 +461,29 @@ export default function Calendar() {
               {selectedDayItems.map((item: any) => (
                 <div
                   key={item.id}
+                  className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer flex items-center justify-between group"
                   onClick={() => {
-                    setIsDayModalOpen(false);
                     setSelectedItem(item);
+                    setIsDayModalOpen(false);
                   }}
-                  className="flex items-center justify-between p-4 rounded-xl border bg-card hover:bg-accent/50 cursor-pointer transition-all group hover:shadow-md"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full shadow-sm ${item.type === 'tax' ? 'bg-orange-500' :
-                      item.type === 'installment' ? 'bg-emerald-500' :
-                        'bg-blue-500'
-                      }`} />
-                    <div>
-                      <p className="font-semibold text-sm group-hover:text-primary transition-colors">
-                        {item.displayTitle}
-                      </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Building2 className="w-3 h-3" />
-                        {item.displayClient?.name}
-                      </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${item.type === 'tax' ? 'bg-red-500' :
+                          item.type === 'installment' ? 'bg-purple-500' : 'bg-blue-500'
+                        }`} />
+                      <span className="font-medium text-sm">{item.displayTitle}</span>
                     </div>
+                    {item.displayClient && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 pl-4">
+                        <Building2 className="w-3 h-3" />
+                        {item.displayClient.name}
+                      </div>
+                    )}
                   </div>
-                  <StatusBadge status={item.status} />
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <StatusBadge status={item.status} variant="compact" />
+                  </div>
                 </div>
               ))}
             </div>

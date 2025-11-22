@@ -1,6 +1,20 @@
+import { CalendarIcon, Building2, Repeat, CheckCircle2, User, AlertTriangle, Edit, FileText } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Deadline, useDeadlines } from "@/hooks/useDeadlines";
+import { format, isWeekend } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useState } from "react";
+import { DeadlineDetails } from "./DeadlineDetails";
+import { DeadlineEditForm } from "@/components/forms/DeadlineEditForm";
+import { formatDate } from "@/lib/utils";
 
-isSelected ?: boolean;
-onToggleSelect ?: (id: string) => void;
+interface DeadlineCardProps {
+  deadline: Deadline & { clients?: { id: string; name: string } | null; };
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const statusConfig = {
