@@ -217,41 +217,39 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
           )}
         />
 
-        {showWeekendWarning && (
-          <>
-            <FormField
-              control={form.control}
-              name="weekend_handling"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tratamento de Final de Semana</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="advance">Adiantar para sexta-feira</SelectItem>
-                      <SelectItem value="postpone">Postergar para segunda-feira</SelectItem>
-                      <SelectItem value="next_business_day">Próximo dia útil</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="weekend_handling"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tratamento de Final de Semana</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="advance">Adiantar para sexta-feira</SelectItem>
+                  <SelectItem value="postpone">Postergar para segunda-feira</SelectItem>
+                  <SelectItem value="next_business_day">Próximo dia útil</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                A data selecionada cai em um final de semana.
-                {weekendHandling === "advance" && " Será ajustada para a sexta-feira anterior."}
-                {weekendHandling === "postpone" && " Será ajustada para a segunda-feira seguinte."}
-                {weekendHandling === "next_business_day" && " Será ajustada para o próximo dia útil."}
-              </AlertDescription>
-            </Alert>
-          </>
+        {showWeekendWarning && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              A data selecionada cai em um final de semana.
+              {weekendHandling === "advance" && " Será ajustada para a sexta-feira anterior."}
+              {weekendHandling === "postpone" && " Será ajustada para a segunda-feira seguinte."}
+              {weekendHandling === "next_business_day" && " Será ajustada para o próximo dia útil."}
+            </AlertDescription>
+          </Alert>
         )}
 
         <FormField
