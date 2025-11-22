@@ -163,6 +163,16 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
         installment={installment}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
+        onUpdate={async (id, data) => {
+          await updateInstallment.mutateAsync({ id, ...data });
+        }}
+        onSuccess={() => {
+          setShowEditDialog(false);
+          toast({
+            title: "Parcela atualizada",
+            description: "As alterações foram salvas com sucesso.",
+          });
+        }}
       />
 
       <DeleteConfirmation
