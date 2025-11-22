@@ -182,19 +182,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-all font-medium rounded-lg h-10"
-              tooltip="Sair do Sistema"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Sair</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+
     </Sidebar>
   );
 }
