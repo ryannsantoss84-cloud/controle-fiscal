@@ -1,4 +1,18 @@
-installment: any;
+import { useState } from "react";
+import { CalendarIcon, Building2, AlertTriangle, CheckCircle2, Edit, Trash2 } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { isWeekend, isPast } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useInstallments } from "@/hooks/useInstallments";
+import { useToast } from "@/hooks/use-toast";
+import { InstallmentEditForm } from "@/components/forms/InstallmentEditForm";
+import { DeleteConfirmation } from "@/components/shared/DeleteConfirmation";
+import { formatDate } from "@/lib/utils";
+
+interface InstallmentCardProps {
+  installment: any;
 }
 
 const statusConfig = {
