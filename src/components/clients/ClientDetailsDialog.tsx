@@ -34,7 +34,7 @@ export function ClientDetailsDialog({
         <DialogHeader>
           <DialogTitle>Detalhes do Cliente</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-start gap-3">
@@ -49,7 +49,7 @@ export function ClientDetailsDialog({
               <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">CNPJ</p>
-                <p className="font-medium">{client.document}</p>
+                <p className="font-medium">{client.cnpj}</p>
               </div>
             </div>
 
