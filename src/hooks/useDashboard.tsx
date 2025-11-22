@@ -34,8 +34,11 @@ export function useDashboard() {
                     .select("*", { count: "exact", head: true })
                     .or("status.eq.active,status.is.null");
 
-                // Buscar obrigações vencendo hoje
-                const today = new Date().toISOString().split('T')[0];
+                // Buscar obrigações vencendo hoje (ajustado para fuso horário local)
+                const now = new Date();
+                const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+                    .toISOString()
+                    .split('T')[0];
                 const { count: dueTodayCount } = await supabase
                     .from("obligations")
                     .select("*", { count: "exact", head: true })
