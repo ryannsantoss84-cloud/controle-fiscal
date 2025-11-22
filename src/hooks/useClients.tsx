@@ -135,11 +135,17 @@ export function useClients(options: UseClientsOptions = {}) {
                 items.forEach((item: any) => {
                   // Calcular próxima data de vencimento
                   const today = new Date();
-                  let dueDate = new Date(today.getFullYear(), today.getMonth(), item.day_of_month || 10);
+                  const dayOfMonth = item.day_of_month || 10;
+
+                  // Criar data corretamente: começar com dia 1 do mês atual
+                  let dueDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                  // Depois setar o dia desejado
+                  dueDate.setDate(dayOfMonth);
 
                   // Se o dia já passou neste mês, joga para o próximo
                   if (dueDate < today) {
                     dueDate.setMonth(dueDate.getMonth() + 1);
+                    dueDate.setDate(dayOfMonth); // Re-setar o dia após mudar o mês
                   }
 
                   // APLICAR REGRA DE FINAL DE SEMANA CONFIGURÁVEL
