@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Calendar, Receipt, Pencil, Trash2, Loader2 } from "lucide-react";
+import { FileText, Plus, Calendar, Receipt, Pencil, Trash2, Loader2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTemplates, type Template } from "@/hooks/useTemplates";
 import { TemplateForm } from "@/components/templates/TemplateForm";
+import { TemplateDetailsDialog } from "@/components/templates/TemplateDetailsDialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,6 +24,8 @@ export default function Templates() {
     const [editingTemplate, setEditingTemplate] = useState<Template | undefined>(undefined);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [viewingTemplate, setViewingTemplate] = useState<Template | null>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
     const handleUseTemplate = (template: Template) => {
         // Navegar para criação de prazo com dados pré-preenchidos
@@ -137,6 +140,17 @@ export default function Templates() {
                                 <Button
                                     variant="outline"
                                     size="icon"
+                                    onClick={() => {
+                                        setViewingTemplate(template);
+                                        setIsDetailsOpen(true);
+                                    }}
+                                    title="Ver Detalhes"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
                                     onClick={() => handleEdit(template)}
                                     title="Editar"
                                 >
@@ -168,6 +182,12 @@ export default function Templates() {
                     </Button>
                 </div>
             )}
+
+            <TemplateDetailsDialog
+                template={viewingTemplate}
+                open={isDetailsOpen}
+                onOpenChange={setIsDetailsOpen}
+            />
 
             <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
                 <AlertDialogContent>
