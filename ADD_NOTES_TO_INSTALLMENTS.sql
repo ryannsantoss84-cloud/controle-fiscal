@@ -1,5 +1,8 @@
 ALTER TABLE installments 
 ADD COLUMN IF NOT EXISTS notes TEXT;
 
--- Update the schema cache by notifying pgrst (optional, but good practice if possible, though usually automatic)
+ALTER TABLE installments
+ADD COLUMN IF NOT EXISTS original_due_date DATE;
+
+-- Update the schema cache
 NOTIFY pgrst, 'reload schema';

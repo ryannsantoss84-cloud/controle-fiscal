@@ -13,19 +13,20 @@ export function useDashboard() {
     const { data: stats, isLoading } = useQuery({
         queryKey: ["dashboard-stats"],
         queryFn: async () => {
-            // Tentar buscar da VIEW primeiro
+            // Tentar buscar da VIEW primeiro (DESATIVADO TEMPORARIAMENTE PARA GARANTIR DADOS REAIS)
+            /*
             const { data: viewData, error: viewError } = await supabase
                 .from("dashboard_stats")
                 .select("*")
                 .single();
 
-            // Se a VIEW funcionar, retornar os dados
             if (!viewError && viewData) {
                 return viewData as DashboardStats;
             }
+            */
 
             // Fallback: Buscar dados manualmente se a VIEW não existir
-            console.log("VIEW não encontrada, buscando dados manualmente...");
+            // console.log("VIEW não encontrada, buscando dados manualmente...");
 
             try {
                 // Buscar clientes ativos
@@ -39,15 +40,28 @@ export function useDashboard() {
                 const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
                     .toISOString()
                     .split('T')[0];
-                const { count: dueTodayCount } = await supabase
+
+                const { count: obligationsDueToday } = await supabase
                     .from("obligations")
                     .select("*", { count: "exact", head: true })
                     .or("status.eq.pending,status.is.null")
                     .eq("due_date", today);
 
+                const { count: installmentsDueToday } = await supabase
+                    .from("installments")
+                    .select("*", { count: "exact", head: true })
+                    .or("status.eq.pending,status.is.null")
+                    .eq("due_date", today);
+
                 // Buscar obrigações atrasadas
-                const { count: overdueCount } = await supabase
+                const { count: obligationsOverdue } = await supabase
                     .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .or("status.eq.pending,status.eq.overdue,status.is.null")
+                    .lt("due_date", today);
+
+                const { count: installmentsOverdue } = await supabase
+                    .from("installments")
                     .select("*", { count: "exact", head: true })
                     .or("status.eq.pending,status.eq.overdue,status.is.null")
                     .lt("due_date", today);
@@ -57,24 +71,35 @@ export function useDashboard() {
                 startOfMonth.setDate(1);
                 startOfMonth.setHours(0, 0, 0, 0);
 
-                const { count: completedCount } = await supabase
+                const { count: obligationsCompleted } = await supabase
                     .from("obligations")
                     .select("*", { count: "exact", head: true })
                     .eq("status", "completed")
                     .gte("completed_at", startOfMonth.toISOString());
 
+                const { count: installmentsCompleted } = await supabase
+                    .from("installments")
+                    .select("*", { count: "exact", head: true })
+                    .eq("status", "paid")
+                    .gte("paid_at", startOfMonth.toISOString());
+
                 // Calcular Total Pendente (Quantidade)
-                const { count: pendingCount } = await supabase
+                const { count: obligationsPending } = await supabase
                     .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("status", "pending");
+
+                const { count: installmentsPending } = await supabase
+                    .from("installments")
                     .select("*", { count: "exact", head: true })
                     .eq("status", "pending");
 
                 return {
                     total_active_clients: clientCount || 0,
-                    due_today: dueTodayCount || 0,
-                    overdue: overdueCount || 0,
-                    completed_month: completedCount || 0,
-                    total_pending: pendingCount || 0,
+                    due_today: (obligationsDueToday || 0) + (installmentsDueToday || 0),
+                    overdue: (obligationsOverdue || 0) + (installmentsOverdue || 0),
+                    completed_month: (obligationsCompleted || 0) + (installmentsCompleted || 0),
+                    total_pending: (obligationsPending || 0) + (installmentsPending || 0),
                 } as DashboardStats;
 
             } catch (error) {
