@@ -73,77 +73,283 @@ export function DeadlineForm() {
       has_installments: false,
       installment_count: "1",
     },
-              < FormField
-                control = { form.control }
-                name = "reference_date"
-                render = {({ field }) => (
-    <FormItem>
-      <FormLabel>Mês de Referência (Competência)</FormLabel>
-      <FormControl>
-        <Input type="month" {...field} />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )
-}
+  });
+
+  const watchedDueDate = form.watch("due_date");
+  const watchedWeekendHandling = form.watch("weekend_handling");
+  const hasInstallments = form.watch("has_installments");
+
+  const dueDateIsWeekend = watchedDueDate && isWeekend(watchedDueDate);
+  const adjustedDate =
+    watchedDueDate && dueDateIsWeekend
+      ? adjustDueDateForWeekend(
+        watchedDueDate,
+        watchedWeekendHandling
+      )
+      : null;
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const dueDate = values.due_date;
+    const originalDueDate = isWeekend(dueDate) ? format(dueDate, "yyyy-MM-dd") : null;
+    const adjustedDueDate = isWeekend(dueDate)
+      ? format(
+        adjustDueDateForWeekend(dueDate, values.weekend_handling),
+        "yyyy-MM-dd"
+      )
+      : format(dueDate, "yyyy-MM-dd");
+
+    const deadline = await createDeadline.mutateAsync({
+      title: values.title,
+      type: values.type,
+      description: values.description,
+      client_id: values.client_id,
+      due_date: adjustedDueDate,
+      reference_date: values.reference_date ? `${values.reference_date}-01` : null,
+      original_due_date: originalDueDate,
+      status: "pending",
+      recurrence: values.recurrence,
+      notes: values.notes,
+      responsible: values.responsible,
+      weekend_handling: values.weekend_handling,
+    });
+
+    if (
+      values.has_installments &&
+      values.installment_count &&
+      parseInt(values.installment_count) > 1
+    ) {
+      const totalInstallments = parseInt(values.installment_count);
+      for (let i = 1; i <= totalInstallments; i++) {
+        const installmentDueDate = format(
+          addMonths(dueDate, i - 1),
+          "yyyy-MM-dd"
+        );
+        await createInstallment.mutateAsync({
+          obligation_id: deadline.id,
+          client_id: values.client_id || deadline.client_id || undefined,
+          installment_number: i,
+          total_installments: totalInstallments,
+          due_date: installmentDueDate,
+          status: "pending",
+          amount: 0,
+        });
+      }
+    }
+
+    form.reset();
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" />
+          Novo Prazo
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Novo Prazo Fiscal</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="obligation">Obrigação</SelectItem>
+                      <SelectItem value="tax">Imposto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Título *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: DCTF - Declaração de Débitos"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Descrição detalhada do prazo"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="client_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="due_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data de Vencimento *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "dd/MM/yyyy")
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
-  < FormField
-control = { form.control }
-name = "recurrence"
-render = {({ field }) => (
-  <FormItem>
-    <FormLabel>Recorrência</FormLabel>
-    <Select
-      onValueChange={field.onChange}
-      defaultValue={field.value}
-    >
-      <FormControl>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-      </FormControl>
-      <SelectContent>
-        <SelectItem value="none">Não se repete</SelectItem>
-        <SelectItem value="monthly">Mensal</SelectItem>
-        <SelectItem value="quarterly">Trimestral</SelectItem>
-        <SelectItem value="semiannual">Semestral</SelectItem>
-        <SelectItem value="annual">Anual</SelectItem>
-      </SelectContent>
-    </Select>
-    <FormMessage />
-  </FormItem>
-)}
+              <FormField
+                control={form.control}
+                name="reference_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mês de Referência (Competência)</FormLabel>
+                    <FormControl>
+                      <Input type="month" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div >
 
-  { dueDateIsWeekend && (
-    <Alert>
-      <AlertCircle className="h-4 w-4" />
-      <AlertDescription>
-        Esta data cai em um final de semana.
-        {adjustedDate && (
-          <span className="font-semibold">
-            {" "}
-            Será ajustada para {format(adjustedDate, "dd/MM/yyyy")}.
-          </span>
-        )}
-      </AlertDescription>
-    </Alert>
-  )}
+              <FormField
+                control={form.control}
+                name="recurrence"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recorrência</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Não se repete</SelectItem>
+                        <SelectItem value="monthly">Mensal</SelectItem>
+                        <SelectItem value="quarterly">Trimestral</SelectItem>
+                        <SelectItem value="semiannual">Semestral</SelectItem>
+                        <SelectItem value="annual">Anual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-{
-  watchedDueDate && (
-    <div className="text-xs text-muted-foreground px-1">
-      Competência estimada: <span className="font-medium text-primary">
-        {FiscalIntelligence.formatReferenceDate(
-          parseISO(watchedDueDate),
-          form.watch("recurrence") as RecurrenceType
-        )}
-      </span>
-    </div>
-  )
-}
+            {dueDateIsWeekend && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Esta data cai em um final de semana.
+                  {adjustedDate && (
+                    <span className="font-semibold">
+                      {" "}
+                      Será ajustada para {format(adjustedDate, "dd/MM/yyyy")}.
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {watchedDueDate && (
+              <div className="text-xs text-muted-foreground px-1">
+                Competência estimada: <span className="font-medium text-primary">
+                  {FiscalIntelligence.formatReferenceDate(
+                    watchedDueDate,
+                    form.watch("recurrence") as RecurrenceType
+                  )}
+                </span>
+              </div>
+            )}
 
             <FormField
               control={form.control}
@@ -272,9 +478,9 @@ render = {({ field }) => (
                 Criar Prazo
               </Button>
             </div>
-          </form >
-        </Form >
-      </DialogContent >
-    </Dialog >
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
