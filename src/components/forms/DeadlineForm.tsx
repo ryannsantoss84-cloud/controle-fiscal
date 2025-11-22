@@ -122,6 +122,7 @@ export function DeadlineForm() {
         );
         await createInstallment.mutateAsync({
           obligation_id: deadline.id,
+          client_id: values.client_id,
           installment_number: i,
           total_installments: totalInstallments,
           due_date: installmentDueDate,

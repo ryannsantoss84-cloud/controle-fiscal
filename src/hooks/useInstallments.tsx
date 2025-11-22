@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 export interface Installment {
   id: string;
   obligation_id: string;
+  client_id?: string;
   installment_number: number;
   total_installments: number;
   amount: number;
