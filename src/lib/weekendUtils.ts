@@ -1,37 +1,42 @@
 import { addDays, subDays, getDay, format } from "date-fns";
+import { isHoliday } from "./holidays";
 
 export type WeekendHandling = "advance" | "postpone" | "next_business_day";
 
 /**
- * Verifica se uma data cai no final de semana
+ * Verifica se uma data cai no final de semana ou feriado
  */
 export function isWeekend(date: Date): boolean {
   const day = getDay(date);
-  return day === 0 || day === 6; // 0 = domingo, 6 = sábado
+  return day === 0 || day === 6 || isHoliday(date); // 0 = domingo, 6 = sábado, ou feriado
 }
 
 /**
- * Obtém o próximo dia útil (segunda-feira)
+ * Obtém o próximo dia útil (pula finais de semana e feriados)
  */
 export function getNextBusinessDay(date: Date): Date {
-  const day = getDay(date);
-  if (day === 0) return addDays(date, 1); // domingo -> segunda
-  if (day === 6) return addDays(date, 2); // sábado -> segunda
-  return date;
+  let current = date;
+  // Enquanto for sábado (6), domingo (0) ou feriado, avança 1 dia
+  while (getDay(current) === 0 || getDay(current) === 6 || isHoliday(current)) {
+    current = addDays(current, 1);
+  }
+  return current;
 }
 
 /**
- * Obtém o dia útil anterior (sexta-feira)
+ * Obtém o dia útil anterior (pula finais de semana e feriados)
  */
 export function getPreviousBusinessDay(date: Date): Date {
-  const day = getDay(date);
-  if (day === 0) return subDays(date, 2); // domingo -> sexta
-  if (day === 6) return subDays(date, 1); // sábado -> sexta
-  return date;
+  let current = date;
+  // Enquanto for sábado (6), domingo (0) ou feriado, volta 1 dia
+  while (getDay(current) === 0 || getDay(current) === 6 || isHoliday(current)) {
+    current = subDays(current, 1);
+  }
+  return current;
 }
 
 /**
- * Ajusta a data de vencimento baseado na regra de final de semana
+ * Ajusta a data de vencimento baseado na regra de final de semana/feriado
  */
 export function adjustDueDateForWeekend(
   date: Date,
@@ -59,14 +64,14 @@ export function formatAdjustedDate(
   originalDate?: Date | null
 ): string {
   if (!originalDate) return format(dueDate, "dd/MM/yyyy");
-  
+
   const dueDateStr = format(dueDate, "dd/MM/yyyy");
   const originalDateStr = format(originalDate, "dd/MM/yyyy");
-  
+
   if (dueDateStr === originalDateStr) {
     return dueDateStr;
   }
-  
+
   return `${dueDateStr} (orig: ${originalDateStr})`;
 }
 
