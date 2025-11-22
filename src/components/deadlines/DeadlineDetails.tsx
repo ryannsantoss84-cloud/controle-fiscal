@@ -1,5 +1,18 @@
-open: boolean;
-onOpenChange: (open: boolean) => void;
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Deadline } from "@/hooks/useDeadlines";
+import { useInstallments } from "@/hooks/useInstallments";
+import { format, isWeekend, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon, Building2, User, Repeat, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+
+interface DeadlineDetailsProps {
+  deadline: Deadline & {
+    clients?: { id: string; name: string } | null;
+  };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const statusConfig = {
