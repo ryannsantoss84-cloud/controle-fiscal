@@ -6,16 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useInstallments } from "@/hooks/useInstallments";
 import { useDeadlines } from "@/hooks/useDeadlines";
+import { useClients } from "@/hooks/useClients";
 import { InstallmentCard } from "@/components/installments/InstallmentCard";
 import { InstallmentForm } from "@/components/forms/InstallmentForm";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, LayoutGrid, List as ListIcon } from "lucide-react";
 
 export default function Installments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [formOpen, setFormOpen] = useState(false);
+
   const { installments, isLoading } = useInstallments();
   const { deadlines } = useDeadlines();
+  const { clients } = useClients({ pageSize: 100 });
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Carregando...</div>;
@@ -35,9 +40,16 @@ export default function Installments() {
       installment.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       installment.protocol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       installment.deadline?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      installment.deadline?.clients?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      installment.deadline?.clients?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      installment.clients?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = statusFilter === "all" || installment.status === statusFilter;
-    return matchesSearch && matchesStatus;
+
+    const matchesClient = clientFilter === "all" ||
+      installment.deadline?.client_id === clientFilter ||
+      installment.client_id === clientFilter;
+
+    return matchesSearch && matchesStatus && matchesClient;
   });
 
   const stats = {
@@ -116,8 +128,8 @@ export default function Installments() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filtrar por status" />
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os Status</SelectItem>
@@ -126,6 +138,37 @@ export default function Installments() {
                 <SelectItem value="overdue">Atrasado</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Clientes</SelectItem>
+                {clients?.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('grid')}
+                title="Visualização em Grade"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('list')}
+                title="Visualização em Lista"
+              >
+                <ListIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -133,8 +176,14 @@ export default function Installments() {
             <div className="text-center py-12 text-muted-foreground">
               Nenhuma parcela encontrada
             </div>
-          ) : (
+          ) : viewMode === 'grid' ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredInstallments.map((installment) => (
+                <InstallmentCard key={installment.id} installment={installment} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
               {filteredInstallments.map((installment) => (
                 <InstallmentCard key={installment.id} installment={installment} />
               ))}

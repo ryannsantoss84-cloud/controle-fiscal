@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/form";
 import { useState, useEffect } from "react";
 import { brazilStates, brazilCities, businessActivityLabels } from "@/lib/brazil-locations";
+import { formatDocument } from "@/lib/formatters";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -115,7 +116,15 @@ export function ClientForm() {
                 <FormItem>
                   <FormLabel>CNPJ *</FormLabel>
                   <FormControl>
-                    <Input placeholder="00.000.000/0000-00" {...field} />
+                    <Input
+                      placeholder="00.000.000/0000-00"
+                      {...field}
+                      onChange={(e) => {
+                        const formatted = formatDocument(e.target.value);
+                        field.onChange(formatted);
+                      }}
+                      maxLength={18}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
