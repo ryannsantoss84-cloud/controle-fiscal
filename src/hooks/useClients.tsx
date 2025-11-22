@@ -7,7 +7,6 @@ export interface Client {
   id: string;
   user_id?: string;
   name: string;
-  document: string;
   cnpj: string;
   email?: string;
   phone?: string;
