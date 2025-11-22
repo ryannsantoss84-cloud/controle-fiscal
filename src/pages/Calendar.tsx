@@ -1,12 +1,4 @@
-import React, { useState, useMemo } from "react";
-import { format, startOfMonth, endOfMonth, isSameMonth, isToday, addMonths, subMonths, getDay, startOfWeek, endOfWeek, addDays, isSameDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Receipt, CreditCard,
-  Filter, Plus, Building2, X, Search, TrendingUp, AlertCircle, CheckCircle2
+Filter, Plus, Building2, X, Search, TrendingUp, AlertCircle, CheckCircle2
 } from "lucide-react";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useInstallments } from "@/hooks/useInstallments";
@@ -558,7 +550,7 @@ export default function Calendar() {
                   <div className="space-y-1">
                     <span className="text-xs text-muted-foreground font-semibold uppercase">Vencimento</span>
                     <span className="font-bold text-sm">
-                      {format(new Date(selectedItem.due_date), "dd/MM/yyyy")}
+                      {formatDate(selectedItem.due_date)}
                     </span>
                   </div>
                 </div>

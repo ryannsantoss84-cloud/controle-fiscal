@@ -1,6 +1,15 @@
-TrendingUp,
+import { useDashboard } from "@/hooks/useDashboard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Users,
+  TrendingUp,
   CalendarDays
 } from "lucide-react";
+import { useClients } from "@/hooks/useClients";
+import { formatDate } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
