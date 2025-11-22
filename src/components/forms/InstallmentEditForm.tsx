@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      client_id: installment.obligation_id || "",
+      client_id: installment.client_id || installment.obligation_id || "",
       installment_number: installment.installment_number || 1,
       total_installments: installment.total_installments || 1,
       due_date: new Date(installment.due_date),
@@ -65,6 +66,19 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
       notes: installment.notes || "",
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        client_id: installment.client_id || installment.obligation_id || "",
+        installment_number: installment.installment_number || 1,
+        total_installments: installment.total_installments || 1,
+        due_date: new Date(installment.due_date),
+        weekend_handling: installment.weekend_handling || "next_business_day",
+        notes: installment.notes || "",
+      });
+    }
+  }, [installment, open, form]);
 
   const selectedDate = form.watch("due_date");
   const weekendHandling = form.watch("weekend_handling");
@@ -94,8 +108,8 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
     await onUpdate(installment.id, {
       ...values,
       due_date: format(finalDueDate, "yyyy-MM-dd"),
-      original_due_date: isWeekend(values.due_date) 
-        ? format(values.due_date, "yyyy-MM-dd") 
+      original_due_date: isWeekend(values.due_date)
+        ? format(values.due_date, "yyyy-MM-dd")
         : null,
     });
 
@@ -138,9 +152,9 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
               <FormItem>
                 <FormLabel>Número da Parcela</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
+                  <Input
+                    type="number"
+                    {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
@@ -156,9 +170,9 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
               <FormItem>
                 <FormLabel>Total de Parcelas</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
+                  <Input
+                    type="number"
+                    {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
