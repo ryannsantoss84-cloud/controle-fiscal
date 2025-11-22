@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatDate } from "@/lib/utils";
 
 interface AlertsCardProps {
   items: any[];
@@ -82,7 +83,7 @@ export function AlertsCard({ items }: AlertsCardProps) {
                     )}
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(item.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                        {formatDate(item.due_date)}
                       </p>
                       {daysUntilDue >= 0 && (
                         <span className="text-xs text-muted-foreground">

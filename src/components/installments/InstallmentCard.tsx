@@ -1,17 +1,4 @@
-import { useState } from "react";
-import { CalendarIcon, Building2, AlertTriangle, CheckCircle2, Edit, Trash2 } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { format, isWeekend, isPast } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useInstallments } from "@/hooks/useInstallments";
-import { useToast } from "@/hooks/use-toast";
-import { InstallmentEditForm } from "@/components/forms/InstallmentEditForm";
-import { DeleteConfirmation } from "@/components/shared/DeleteConfirmation";
-
-interface InstallmentCardProps {
-  installment: any;
+installment: any;
 }
 
 const statusConfig = {
@@ -89,7 +76,7 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
             <div className="flex items-center gap-2">
               <span>
-                Vencimento: {format(new Date(installment.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                Vencimento: {formatDate(installment.due_date)}
               </span>
               {isWeekendDue && (
                 <div className="flex items-center gap-1 text-warning" title="Vence no final de semana">
@@ -103,7 +90,7 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
             <div className="flex items-center gap-2 text-sm text-success">
               <CheckCircle2 className="h-4 w-4" />
               <span>
-                Pago em {format(new Date(installment.paid_at), "dd/MM/yyyy", { locale: ptBR })}
+                Pago em {formatDate(installment.paid_at)}
               </span>
             </div>
           )}
@@ -171,7 +158,7 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
         title="Confirmar Exclusão"
         itemName={`Parcela ${installment.installment_number}/${installment.total_installments}`}
         clientName={installment.obligations?.clients?.name || installment.clients?.name}
-        dueDate={format(new Date(installment.due_date), "dd/MM/yyyy", { locale: ptBR })}
+        dueDate={formatDate(installment.due_date)}
       />
     </>
   );

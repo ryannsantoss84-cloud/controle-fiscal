@@ -1,18 +1,5 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Deadline } from "@/hooks/useDeadlines";
-import { useInstallments } from "@/hooks/useInstallments";
-import { format, isWeekend, addDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Building2, User, Repeat, FileText, AlertTriangle, CheckCircle2 } from "lucide-react";
-
-interface DeadlineDetailsProps {
-  deadline: Deadline & {
-    clients?: { id: string; name: string } | null; 
-  };
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+open: boolean;
+onOpenChange: (open: boolean) => void;
 }
 
 const statusConfig = {
@@ -39,7 +26,7 @@ const installmentStatusConfig = {
 export function DeadlineDetails({ deadline, open, onOpenChange }: DeadlineDetailsProps) {
   const { installments } = useInstallments();
   const deadlineInstallments = installments.filter(i => i.obligation_id === deadline.id);
-  
+
   const isWeekendDue = deadline.due_date ? isWeekend(new Date(deadline.due_date)) : false;
   const suggestedDate = isWeekendDue && deadline.due_date
     ? addDays(new Date(deadline.due_date), new Date(deadline.due_date).getDay() === 6 ? 2 : 1)
@@ -84,7 +71,7 @@ export function DeadlineDetails({ deadline, open, onOpenChange }: DeadlineDetail
                 <div>
                   <p className="text-sm font-medium">Vencimento</p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(deadline.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {formatDate(deadline.due_date)}
                   </p>
                   {isWeekendDue && (
                     <div className="flex items-center gap-1 mt-1 text-warning">
@@ -134,7 +121,7 @@ export function DeadlineDetails({ deadline, open, onOpenChange }: DeadlineDetail
               <div className="space-y-2">
                 {deadlineInstallments.map((installment) => {
                   const installmentWeekend = isWeekend(new Date(installment.due_date));
-                  
+
                   return (
                     <div key={installment.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
@@ -148,7 +135,7 @@ export function DeadlineDetails({ deadline, open, onOpenChange }: DeadlineDetail
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <CalendarIcon className="h-4 w-4" />
-                          {format(new Date(installment.due_date), "dd/MM/yyyy")}
+                          {formatDate(installment.due_date)}
                           {installmentWeekend && (
                             <AlertTriangle className="h-3 w-3 text-warning" />
                           )}
