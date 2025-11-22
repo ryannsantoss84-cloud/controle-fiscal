@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { CheckCircle, Trash2, RefreshCw, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Plus } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useDeadlines } from "@/hooks/useDeadlines";
+import { useClients } from "@/hooks/useClients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -10,55 +10,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { DeadlineCard } from "@/components/deadlines/DeadlineCard";
+import { DeadlineTable } from "@/components/deadlines/DeadlineTable";
 import { DeadlineForm } from "@/components/forms/DeadlineForm";
-import { useDeadlines, Deadline } from "@/hooks/useDeadlines";
-import { useClients } from "@/hooks/useClients";
+import { LayoutGrid, List, RefreshCw, Trash2, CheckCircle2, RotateCcw, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatDate } from "@/lib/utils";
-import { StatusBadge } from "@/components/shared/StatusBadge";
-import { useSorting } from "@/hooks/useSorting";
-import { SortableColumn } from "@/components/shared/SortableColumn";
+import { cn } from "@/lib/utils";
 
 export default function Deadlines() {
-  // Estados de Filtro e Paginação
-  const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const pageSize = viewMode === 'grid' ? 12 : 20;
-
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [clientFilter, setClientFilter] = useState<string>("all");
-
+  const [clientFilter, setClientFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
+  const [targetDate, setTargetDate] = useState<Date>(new Date());
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 12;
 
-  const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
-
-  // Hook com Paginação e Filtros no Backend
-  const { deadlines: dataDeadlines, totalCount, isLoading, updateDeadline, deleteDeadline } = useDeadlines({
-    page,
-    pageSize,
-    searchTerm,
-    statusFilter,
-    typeFilter,
-    clientFilter
-  });
-
-  const deadlines = sortData(dataDeadlines || []);
-
-  const { clients } = useClients({ pageSize: 100 });
-
+  const { deadlines, deleteDeadline, updateDeadline } = useDeadlines();
+  const { clients } = useClients();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const totalPages = Math.ceil(totalCount / pageSize);
 
-  const toggleSelection = (id: string) => {
+  // Filtragem
+  const filteredDeadlines = useMemo(() => {
+    return deadlines.filter((deadline) => {
+      const matchesSearch = deadline.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        deadline.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesClient = clientFilter === "all" || deadline.client_id === clientFilter;
+      const matchesStatus = statusFilter === "all" || deadline.status === statusFilter;
+
+      return matchesSearch && matchesClient && matchesStatus;
+    });
+  }, [deadlines, searchTerm, clientFilter, statusFilter]);
+
+  // Paginação
+  const totalPages = Math.ceil(filteredDeadlines.length / itemsPerPage);
+  const paginatedDeadlines = filteredDeadlines.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
+  const handleToggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -68,34 +78,16 @@ export default function Deadlines() {
     setSelectedIds(newSelected);
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === deadlines.length) {
+  const handleSelectAll = () => {
+    if (selectedIds.size === paginatedDeadlines.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(deadlines.map(d => d.id)));
-    }
-  };
-
-  const handleBulkStatusChange = async (newStatus: string) => {
-    try {
-      const count = selectedIds.size;
-      for (const id of selectedIds) {
-        await updateDeadline.mutateAsync({
-          id,
-          status: newStatus as any,
-          completed_at: newStatus === "completed" ? new Date().toISOString() : null,
-        });
-      }
-      setSelectedIds(new Set());
-      toast({ title: "Status atualizado com sucesso!" });
-    } catch (error) {
-      toast({ title: "Erro ao atualizar prazos", variant: "destructive" });
+      setSelectedIds(new Set(paginatedDeadlines.map(d => d.id)));
     }
   };
 
   const handleBulkDelete = async () => {
-    const count = selectedIds.size;
-    if (!confirm(`Tem certeza que deseja excluir ${count} itens?`)) return;
+    if (!confirm(`Tem certeza que deseja excluir ${selectedIds.size} itens?`)) return;
 
     try {
       for (const id of selectedIds) {
@@ -108,18 +100,50 @@ export default function Deadlines() {
     }
   };
 
+  const handleBulkComplete = async () => {
+    try {
+      await Promise.all(Array.from(selectedIds).map(id =>
+        updateDeadline.mutateAsync({
+          id,
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+      ));
+      setSelectedIds(new Set());
+      toast({ title: "Itens concluídos com sucesso!" });
+    } catch (error) {
+      toast({ title: "Erro ao concluir prazos", variant: "destructive" });
+    }
+  };
+
+  const handleBulkReopen = async () => {
+    try {
+      await Promise.all(Array.from(selectedIds).map(id =>
+        updateDeadline.mutateAsync({
+          id,
+          status: 'pending',
+          completed_at: null
+        })
+      ));
+      setSelectedIds(new Set());
+      toast({ title: "Itens reabertos com sucesso!" });
+    } catch (error) {
+      toast({ title: "Erro ao reabrir prazos", variant: "destructive" });
+    }
+  };
+
   const handleGenerateMonthly = async () => {
     setIsGenerating(true);
     try {
       const { data, error } = await (supabase.rpc as any)('generate_monthly_obligations', {
-        target_date: new Date().toISOString().split('T')[0]
+        target_date: targetDate.toISOString().split('T')[0]
       });
 
       if (error) throw error;
       const result = data as any;
       toast({
         title: "Automação Concluída",
-        description: `${result.obligations_created} novas obrigações geradas.`
+        description: `${result.obligations_created} novas obrigações geradas para ${format(targetDate, 'MMMM/yyyy', { locale: ptBR })}.`
       });
       queryClient.invalidateQueries({ queryKey: ["deadlines"] });
     } catch (error: any) {
@@ -128,6 +152,8 @@ export default function Deadlines() {
       setIsGenerating(false);
     }
   };
+
+  const totalCount = filteredDeadlines.length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -138,16 +164,41 @@ export default function Deadlines() {
             Gerencie obrigações e impostos ({totalCount} registros)
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleGenerateMonthly}
-            disabled={isGenerating}
-            variant="secondary"
-            className="gap-2 shadow-sm"
-          >
-            <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-            {isGenerating ? "Gerando..." : "Gerar Mensal"}
-          </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !targetDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {targetDate ? format(targetDate, "MMMM 'de' yyyy", { locale: ptBR }) : <span>Escolha o mês</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={targetDate}
+                  onSelect={(date) => date && setTargetDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              onClick={handleGenerateMonthly}
+              disabled={isGenerating}
+              variant="secondary"
+              className="gap-2 shadow-sm whitespace-nowrap"
+            >
+              <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+              {isGenerating ? "Gerando..." : "Gerar"}
+            </Button>
+          </div>
           <DeadlineForm />
         </div>
       </div>
@@ -199,173 +250,93 @@ export default function Deadlines() {
             className="h-8 w-8"
             onClick={() => setViewMode('list')}
           >
-            <ListIcon className="h-4 w-4" />
+            <List className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Bulk Actions Bar */}
       {selectedIds.size > 0 && (
-        <div className="sticky top-20 z-20 bg-primary/5 backdrop-blur-md border border-primary/20 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={deadlines.length > 0 && selectedIds.size === deadlines.length}
-                onCheckedChange={toggleSelectAll}
-                className="border-primary"
-              />
-              <div>
-                <span className="font-semibold text-lg text-primary">
-                  {selectedIds.size} selecionados
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Button variant="outline" size="sm" onClick={() => handleBulkStatusChange("pending")} className="gap-2 border-blue-500/50 hover:bg-blue-500/10">
-                <CheckCircle className="h-4 w-4 text-blue-500" /> Pendente
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleBulkStatusChange("in_progress")} className="gap-2 border-yellow-500/50 hover:bg-yellow-500/10">
-                <CheckCircle className="h-4 w-4 text-yellow-500" /> Andamento
-              </Button>
-              <Button variant="default" size="sm" onClick={() => handleBulkStatusChange("completed")} className="gap-2 bg-green-600 hover:bg-green-700">
-                <CheckCircle className="h-4 w-4" /> Concluir
-              </Button>
-              <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="gap-2">
-                <Trash2 className="h-4 w-4" /> Excluir
-              </Button>
-            </div>
+        <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg flex items-center justify-between animate-in slide-in-from-top-2">
+          <span className="text-sm font-medium text-primary">
+            {selectedIds.size} item(s) selecionado(s)
+          </span>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" size="sm" className="gap-2">
+                  Ações em Massa <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleBulkComplete} className="gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  Concluir Selecionados
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBulkReopen} className="gap-2">
+                  <RotateCcw className="h-4 w-4 text-warning" />
+                  Reabrir Selecionados
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleBulkDelete} className="gap-2 text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Selecionados
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       )}
 
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {paginatedDeadlines.map((deadline) => (
+            <DeadlineCard
+              key={deadline.id}
+              deadline={deadline}
+              isSelected={selectedIds.has(deadline.id)}
+              onToggleSelect={handleToggleSelect}
+            />
+          ))}
         </div>
       ) : (
-        <>
-          {deadlines.length === 0 ? (
-            <div className="col-span-full text-center py-12 bg-muted/10 rounded-xl border border-dashed">
-              <p className="text-muted-foreground">Nenhum prazo encontrado</p>
-            </div>
-          ) : (
-            <>
-              {viewMode === 'grid' ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {deadlines.map((deadline) => (
-                    <DeadlineCard
-                      key={deadline.id}
-                      deadline={deadline}
-                      isSelected={selectedIds.has(deadline.id)}
-                      onToggleSelect={toggleSelection}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-                  <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_auto_auto] gap-4 p-4 border-b bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    <div className="w-8 text-center">
-                      <Checkbox
-                        checked={deadlines.length > 0 && selectedIds.size === deadlines.length}
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </div>
-                    <SortableColumn
-                      label="Título"
-                      sortKey="title"
-                      currentSortKey={sortConfig.key as string}
-                      currentSortDirection={sortConfig.direction}
-                      onSort={handleSort}
-                    />
-                    <SortableColumn
-                      label="Cliente"
-                      sortKey="clients.name"
-                      currentSortKey={sortConfig.key as string}
-                      currentSortDirection={sortConfig.direction}
-                      onSort={handleSort}
-                    />
-                    <SortableColumn
-                      label="Competência"
-                      sortKey="reference_date"
-                      currentSortKey={sortConfig.key as string}
-                      currentSortDirection={sortConfig.direction}
-                      onSort={handleSort}
-                    />
-                    <SortableColumn
-                      label="Vencimento"
-                      sortKey="due_date"
-                      currentSortKey={sortConfig.key as string}
-                      currentSortDirection={sortConfig.direction}
-                      onSort={handleSort}
-                    />
-                    <SortableColumn
-                      label="Status"
-                      sortKey="status"
-                      currentSortKey={sortConfig.key as string}
-                      currentSortDirection={sortConfig.direction}
-                      onSort={handleSort}
-                    />
-                    <div className="text-right">Ações</div>
-                  </div>
-                  <div className="divide-y">
-                    {deadlines.map((deadline) => (
-                      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr_auto_auto] gap-4 p-4 items-center hover:bg-muted/5 transition-colors ${selectedIds.has(deadline.id) ? 'bg-primary/5' : ''}">
-                        <div className="w-8 text-center">
-                          <Checkbox
-                            checked={selectedIds.has(deadline.id)}
-                            onCheckedChange={() => toggleSelection(deadline.id)}
-                          />
-                        </div>
-                        <div className="font-medium text-sm">{deadline.title}</div>
-                        <div className="text-sm text-muted-foreground">{deadline.clients?.name}</div>
-                        <div className="text-sm font-mono">
-                          {deadline.reference_date
-                            ? format(new Date(deadline.reference_date), "MMM/yyyy", { locale: ptBR })
-                            : '-'}
-                        </div>
-                        <div className="text-sm font-mono">{formatDate(deadline.due_date)}</div>
-                        <div><StatusBadge status={deadline.status} variant="compact" /></div>
-                        <div className="text-right">
-                          {/* Ações simplificadas para lista */}
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleSelection(deadline.id)}>
-                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+        <DeadlineTable
+          deadlines={paginatedDeadlines}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onSelectAll={handleSelectAll}
+        />
+      )}
 
-          {/* Paginação */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8 pb-8">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Anterior
-              </Button>
-              <span className="text-sm font-medium mx-4">
-                Página {page} de {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Próximo
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          )}
-        </>
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Anterior
+          </Button>
+          <span className="flex items-center px-4 text-sm font-medium">
+            Página {page} de {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            Próxima
+          </Button>
+        </div>
       )}
     </div>
   );
