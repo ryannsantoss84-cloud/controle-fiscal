@@ -26,7 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { brazilStates, brazilCities, businessActivityLabels } from "@/lib/brazil-locations";
 import { formatDocument } from "@/lib/formatters";
 
@@ -35,7 +35,7 @@ const formSchema = z.object({
   cnpj: z.string().min(1, "CNPJ é obrigatório"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
-  tax_regime: z.enum(["simples_nacional", "lucro_presumido", "lucro_real"]),
+  tax_regime: z.enum(["simples_nacional", "lucro_presumido", "lucro_real", "mei"]),
   business_activity: z.enum(["commerce", "service", "both"], {
     required_error: "Selecione o tipo de atividade",
   }),
@@ -56,6 +56,7 @@ export function ClientEditDialog({
 }: ClientEditDialogProps) {
   const { updateClient } = useClients();
   const [selectedState, setSelectedState] = useState<string>("");
+  const isMountedRef = useRef(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,6 +73,8 @@ export function ClientEditDialog({
   });
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (client) {
       const state = client.state || "";
       setSelectedState(state);
@@ -86,23 +89,32 @@ export function ClientEditDialog({
         city: client.city || "",
       });
     }
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [client, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!client) return;
+    if (!client || !isMountedRef.current) return;
 
-    await updateClient.mutateAsync({
-      id: client.id,
-      name: values.name,
-      cnpj: values.cnpj,
-      tax_regime: values.tax_regime,
-      business_activity: values.business_activity,
-      state: values.state,
-      city: values.city,
-      email: values.email || undefined,
-      phone: values.phone || undefined,
-    });
-    onOpenChange(false);
+    try {
+      await updateClient.mutateAsync({
+        id: client.id,
+        name: values.name,
+        cnpj: values.cnpj,
+        tax_regime: values.tax_regime,
+        business_activity: values.business_activity,
+        state: values.state,
+        city: values.city,
+        email: values.email || undefined,
+        phone: values.phone || undefined,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao atualizar cliente:", error);
+      // Toast já será exibido pelo hook useClients
+    }
   };
 
   if (!client) return null;
@@ -172,6 +184,7 @@ export function ClientEditDialog({
                         Lucro Presumido
                       </SelectItem>
                       <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                      <SelectItem value="mei">MEI</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
