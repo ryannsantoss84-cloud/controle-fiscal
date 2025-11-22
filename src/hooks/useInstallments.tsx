@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export interface Installment {
   id: string;
-  obligation_id: string;
+  obligation_id?: string | null;
   client_id?: string;
   installment_number: number;
   total_installments: number;
@@ -14,6 +14,7 @@ export interface Installment {
   status: "pending" | "paid" | "overdue";
   created_at: string;
   updated_at: string;
+  name?: string; // Adicionado para parcelas avulsas
 }
 
 export function useInstallments(obligationId?: string) {
@@ -27,6 +28,10 @@ export function useInstallments(obligationId?: string) {
         .from("installments")
         .select(`
           *,
+          clients (
+            id,
+            name
+          ),
           obligations!installments_obligation_id_fkey (
             id,
             title,
@@ -50,9 +55,26 @@ export function useInstallments(obligationId?: string) {
 
   const createInstallment = useMutation({
     mutationFn: async (installment: Omit<Installment, "id" | "created_at" | "updated_at">) => {
+      // Sanitização: Garantir que client_id não seja uma string vazia
+      const sanitizedInstallment = {
+        ...installment,
+        client_id: installment.client_id || null,
+        obligation_id: installment.obligation_id || null, // Agora pode ser nulo
+        amount: Number(installment.amount) || 0,
+      };
+
+      // Removida a verificação estrita de obligation_id
+
+      console.log("Creating installment with payload:", sanitizedInstallment);
+      console.log("Payload types:", {
+        client_id: typeof sanitizedInstallment.client_id,
+        obligation_id: typeof sanitizedInstallment.obligation_id,
+        amount: typeof sanitizedInstallment.amount
+      });
+
       const { data, error } = await supabase
         .from("installments")
-        .insert([installment])
+        .insert([sanitizedInstallment])
         .select()
         .single();
 

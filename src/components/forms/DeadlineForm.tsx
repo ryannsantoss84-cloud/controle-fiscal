@@ -26,6 +26,7 @@ import { useClients } from "@/hooks/useClients";
 import { useInstallments } from "@/hooks/useInstallments";
 import { addMonths, format, parseISO } from "date-fns";
 import { adjustDueDateForWeekend, isWeekend } from "@/lib/weekendUtils";
+import { FiscalIntelligence, RecurrenceType } from "@/lib/fiscalUtils";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -121,7 +122,7 @@ export function DeadlineForm() {
         );
         await createInstallment.mutateAsync({
           obligation_id: deadline.id,
-          client_id: values.client_id || deadline.client_id,
+          client_id: values.client_id || deadline.client_id || undefined,
           installment_number: i,
           total_installments: totalInstallments,
           due_date: installmentDueDate,
@@ -308,6 +309,17 @@ export function DeadlineForm() {
                   )}
                 </AlertDescription>
               </Alert>
+            )}
+
+            {watchedDueDate && (
+              <div className="text-xs text-muted-foreground px-1">
+                Competência estimada: <span className="font-medium text-primary">
+                  {FiscalIntelligence.formatReferenceDate(
+                    parseISO(watchedDueDate),
+                    form.watch("recurrence") as RecurrenceType
+                  )}
+                </span>
+              </div>
             )}
 
             <FormField

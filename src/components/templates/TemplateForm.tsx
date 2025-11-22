@@ -45,7 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Calendar } from "lucide-react";
 import { useTemplates, type Template } from "@/hooks/useTemplates";
 
 // --- Schema ---
@@ -221,6 +221,18 @@ function SortableItem({ id, index, remove, form }: { id: string; index: number; 
                                 )}
                             />
                         </div>
+
+                        {/* Preview de Inteligência Fiscal */}
+                        {(form.watch(`items.${index}.recurrence`) === "quarterly" || form.watch(`items.${index}.recurrence`) === "annual") && (
+                            <div className="col-span-1 md:col-span-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                    {form.watch(`items.${index}.recurrence`) === "quarterly"
+                                        ? "Será gerado em: Jan, Abr, Jul, Out"
+                                        : "Será gerado anualmente (padrão: Janeiro)"}
+                                </span>
+                            </div>
+                        )}
 
                         <FormField
                             control={form.control}

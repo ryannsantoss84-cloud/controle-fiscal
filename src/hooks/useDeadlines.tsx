@@ -111,7 +111,13 @@ export function useDeadlines(options: UseDeadlinesOptions = {}) {
       const { data, error } = await supabase
         .from("obligations")
         .insert([deadline])
-        .select()
+        .select(`
+          *,
+          clients (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) throw error;
@@ -136,7 +142,13 @@ export function useDeadlines(options: UseDeadlinesOptions = {}) {
         .from("obligations")
         .update(updates)
         .eq("id", id)
-        .select()
+        .select(`
+          *,
+          clients (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) throw error;

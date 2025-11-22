@@ -63,7 +63,7 @@ export default function Calendar() {
       // Filtro de cliente
       if (clientFilter !== "all") {
         const itemClientId = item.type === 'installment'
-          ? item.obligations?.client_id
+          ? (item.obligations?.client_id || item.client_id)
           : item.client_id;
         if (itemClientId !== clientFilter) return false;
       }
@@ -77,7 +77,7 @@ export default function Calendar() {
           ? `Parcela ${item.installment_number}/${item.total_installments}`
           : item.title;
         const clientName = item.type === 'installment'
-          ? item.obligations?.clients?.name
+          ? (item.obligations?.clients?.name || item.clients?.name)
           : item.clients?.name;
 
         const searchLower = searchTerm.toLowerCase();
@@ -103,7 +103,7 @@ export default function Calendar() {
       if (item.type === 'installment') {
         title = `Parcela ${item.installment_number}/${item.total_installments}`;
         if (item.obligations?.title) title += ` - ${item.obligations.title}`;
-        client = item.obligations?.clients;
+        client = item.obligations?.clients || item.clients;
       } else {
         title = item.title;
         client = item.clients;
@@ -500,7 +500,10 @@ export default function Calendar() {
                             >
                               <div className="flex items-center gap-1">
                                 <div className={`w-1 h-1 rounded-full ${isOverdue ? 'bg-red-500' : 'bg-current'}`} />
-                                <span className="truncate font-semibold">{item.displayTitle}</span>
+                                <span className="truncate font-semibold">
+                                  {item.displayClient?.name && <span className="opacity-75 mr-1">{item.displayClient.name.split(' ')[0]}:</span>}
+                                  {item.displayTitle}
+                                </span>
                               </div>
                             </div>
                           );

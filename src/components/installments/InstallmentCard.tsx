@@ -76,15 +76,15 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
             <Badge variant={config.variant}>{config.label}</Badge>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-2 pb-3">
-          {installment.obligations?.clients && (
+          {(installment.obligations?.clients || installment.clients) && (
             <div className="flex items-center gap-2 text-sm">
               <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span>{installment.obligations.clients.name}</span>
+              <span>{installment.obligations?.clients?.name || installment.clients?.name}</span>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2 text-sm">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
             <div className="flex items-center gap-2">
@@ -118,9 +118,9 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
 
         <CardFooter className="pt-3 border-t flex gap-2">
           {installment.status === "pending" && (
-            <Button 
-              variant="default" 
-              size="sm" 
+            <Button
+              variant="default"
+              size="sm"
               className="flex-1"
               onClick={() => handleStatusChange("paid")}
               disabled={updateInstallment.isPending}
@@ -129,9 +129,9 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
             </Button>
           )}
           {(installment.status === "paid") && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1"
               onClick={() => handleStatusChange("pending")}
               disabled={updateInstallment.isPending}
@@ -139,7 +139,7 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
               Reverter para Pendente
             </Button>
           )}
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -170,7 +170,7 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
         onConfirm={handleDelete}
         title="Confirmar Exclusão"
         itemName={`Parcela ${installment.installment_number}/${installment.total_installments}`}
-        clientName={installment.obligations?.clients?.name}
+        clientName={installment.obligations?.clients?.name || installment.clients?.name}
         dueDate={format(new Date(installment.due_date), "dd/MM/yyyy", { locale: ptBR })}
       />
     </>
