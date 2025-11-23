@@ -205,7 +205,7 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status Inicial</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
@@ -228,7 +228,7 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fim de Semana</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />

@@ -223,7 +223,7 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tratamento de Final de Semana</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />

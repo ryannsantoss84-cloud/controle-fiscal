@@ -167,7 +167,7 @@ export function ClientForm() {
                   <FormLabel>Tipo de Atividade *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -203,7 +203,7 @@ export function ClientForm() {
                         setSelectedState(value);
                         form.setValue("city", ""); // Limpa a cidade quando muda o estado
                       }}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>

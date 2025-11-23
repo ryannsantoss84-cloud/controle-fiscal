@@ -222,7 +222,7 @@ export function DeadlineForm() {
                   <FormLabel>Cliente *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -304,7 +304,7 @@ export function DeadlineForm() {
                     <FormLabel>Recorrência</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -359,7 +359,7 @@ export function DeadlineForm() {
                   <FormLabel>Tratamento de Final de Semana</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
