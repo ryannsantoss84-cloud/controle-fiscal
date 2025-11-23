@@ -103,9 +103,9 @@ export function DeadlineEditForm({
   const adjustedDate =
     watchedDueDate && dueDateIsWeekend
       ? adjustDueDateForWeekend(
-          parseISO(watchedDueDate),
-          watchedWeekendHandling
-        )
+        parseISO(watchedDueDate),
+        watchedWeekendHandling
+      )
       : null;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -113,9 +113,9 @@ export function DeadlineEditForm({
     const originalDueDate = isWeekend(dueDate) ? values.due_date : null;
     const adjustedDueDate = isWeekend(dueDate)
       ? format(
-          adjustDueDateForWeekend(dueDate, values.weekend_handling),
-          "yyyy-MM-dd"
-        )
+        adjustDueDateForWeekend(dueDate, values.weekend_handling),
+        "yyyy-MM-dd"
+      )
       : values.due_date;
 
     await updateDeadline.mutateAsync({
@@ -157,7 +157,7 @@ export function DeadlineEditForm({
                   <FormLabel>Tipo *</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
