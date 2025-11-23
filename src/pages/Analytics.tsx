@@ -31,13 +31,44 @@ export default function Analytics() {
 
   const allItems = [...deadlines, ...installments];
 
+  // Filter items by period
+  const filteredItems = useMemo(() => {
+    if (period === "all") return allItems;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    return allItems.filter(item => {
+      const itemDate = new Date(item.due_date);
+
+      switch (period) {
+        case "week": {
+          const weekStart = new Date(startOfToday);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          return itemDate >= weekStart && itemDate <= weekEnd;
+        }
+        case "month": {
+          return itemDate.getMonth() === now.getMonth() &&
+            itemDate.getFullYear() === now.getFullYear();
+        }
+        case "year": {
+          return itemDate.getFullYear() === now.getFullYear();
+        }
+        default:
+          return true;
+      }
+    });
+  }, [allItems, period]);
+
   // Métricas principais
   const metrics = useMemo(() => {
-    const totalItems = allItems.length;
-    const completed = allItems.filter(item => item.status === 'completed' || item.status === 'paid').length;
-    const inProgress = allItems.filter(item => item.status === 'in_progress').length;
-    const pending = allItems.filter(item => item.status === 'pending').length;
-    const overdue = allItems.filter(item => item.status === 'overdue').length;
+    const totalItems = filteredItems.length;
+    const completed = filteredItems.filter(item => item.status === 'completed' || item.status === 'paid').length;
+    const inProgress = filteredItems.filter(item => item.status === 'in_progress').length;
+    const pending = filteredItems.filter(item => item.status === 'pending').length;
+    const overdue = filteredItems.filter(item => item.status === 'overdue').length;
 
     return {
       totalItems,
@@ -48,12 +79,12 @@ export default function Analytics() {
       completedPercent: totalItems > 0 ? Math.round((completed / totalItems) * 100) : 0,
       overduePercent: totalItems > 0 ? Math.round((overdue / totalItems) * 100) : 0,
     };
-  }, [allItems]);
+  }, [filteredItems]);
 
   // Dados por cliente
   const clientStats = useMemo(() => {
     return clients.map(client => {
-      const clientItems = allItems.filter(item => "client_id" in item && item.client_id === client.id);
+      const clientItems = filteredItems.filter(item => "client_id" in item && item.client_id === client.id);
       const total = clientItems.length;
       const completedCount = clientItems.filter(item => item.status === 'completed' || item.status === 'paid').length;
       const overdueCount = clientItems.filter(item => item.status === 'overdue').length;
@@ -68,7 +99,7 @@ export default function Analytics() {
         health: overdueCount === 0 ? 'excellent' : overdueCount < 3 ? 'good' : 'warning',
       };
     }).filter(c => c.total > 0).sort((a, b) => b.completionRate - a.completionRate);
-  }, [clients, allItems]);
+  }, [clients, filteredItems]);
 
   // Progress Ring Component
   const ProgressRing = ({ percent, size = 120, strokeWidth = 12, color = COLORS.primary, label, value }: any) => {

@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function TopBar() {
 
@@ -17,6 +18,7 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <NotificationBell />
       </div>
     </div>

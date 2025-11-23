@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAutoGenerate } from "./hooks/useAutoGenerate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ThemeProvider } from "./components/theme-provider";
 import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import Deadlines from "./pages/Deadlines";
@@ -103,13 +104,15 @@ const AppContent = () => {
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <Toaster />
-          <Sonner />
-          <AppContent />
-        </BrowserRouter>
-      </TooltipProvider>
+      <ThemeProvider defaultTheme="system" storageKey="fiscal-theme">
+        <TooltipProvider>
+          <BrowserRouter>
+            <Toaster />
+            <Sonner />
+            <AppContent />
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );
