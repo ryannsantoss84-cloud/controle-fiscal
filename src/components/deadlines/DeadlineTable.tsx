@@ -25,6 +25,7 @@ interface DeadlineTableProps {
     onSelectAll: () => void;
     sortConfig: { key: string; direction: SortDirection };
     onSort: (key: string) => void;
+    totalFilteredCount: number;
 }
 
 const statusConfig = {
@@ -41,6 +42,7 @@ export function DeadlineTable({
     onSelectAll,
     sortConfig,
     onSort,
+    totalFilteredCount,
 }: DeadlineTableProps) {
     const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null);
 
@@ -52,7 +54,7 @@ export function DeadlineTable({
                         <TableRow>
                             <TableHead className="w-[50px]">
                                 <Checkbox
-                                    checked={deadlines.length > 0 && selectedIds.size === deadlines.length}
+                                    checked={totalFilteredCount > 0 && selectedIds.size === totalFilteredCount}
                                     onCheckedChange={onSelectAll}
                                     aria-label="Select all"
                                 />

@@ -87,10 +87,10 @@ export default function Deadlines() {
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.size === paginatedDeadlines.length) {
+    if (selectedIds.size === filteredDeadlines.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(paginatedDeadlines.map(d => d.id)));
+      setSelectedIds(new Set(filteredDeadlines.map(d => d.id)));
     }
   };
 
@@ -299,6 +299,7 @@ export default function Deadlines() {
           onSelectAll={handleSelectAll}
           sortConfig={sortConfig}
           onSort={handleSort}
+          totalFilteredCount={filteredDeadlines.length}
         />
       )}
 
