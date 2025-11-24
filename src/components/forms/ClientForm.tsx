@@ -31,6 +31,9 @@ import {
 import { useState, useEffect } from "react";
 import { brazilStates, brazilCities, businessActivityLabels } from "@/lib/brazil-locations";
 import { formatDocument } from "@/lib/formatters";
+import { checkClientDuplication, ClientDuplicationCheck } from "@/lib/clientDuplicationValidator";
+import { DuplicationAlert } from "@/components/shared/DuplicationAlert";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -48,7 +51,10 @@ const formSchema = z.object({
 export function ClientForm() {
   const [open, setOpen] = useState(false);
   const [selectedState, setSelectedState] = useState<string>("");
-  const { createClient } = useClients();
+  const { createClient, clients } = useClients({ pageSize: 1000 });
+  const { toast } = useToast();
+  const [duplicationCheck, setDuplicationCheck] = useState<ClientDuplicationCheck | null>(null);
+  const [pendingSubmission, setPendingSubmission] = useState<z.infer<typeof formSchema> | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,7 +68,7 @@ export function ClientForm() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const performSubmission = async (values: z.infer<typeof formSchema>) => {
     await createClient.mutateAsync({
       name: values.name,
       cnpj: values.cnpj,
@@ -73,6 +79,46 @@ export function ClientForm() {
       email: values.email || undefined,
       phone: values.phone || undefined,
     });
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Validar duplicatas
+    const check = checkClientDuplication(
+      {
+        name: values.name,
+        cnpj: values.cnpj,
+      },
+      clients
+    );
+
+    // Se CNPJ duplicado, bloquear
+    if (check.level === 'cnpj') {
+      setDuplicationCheck(check);
+      return;
+    }
+
+    // Se nome similar, alertar
+    if (check.level === 'name') {
+      setDuplicationCheck(check);
+      setPendingSubmission(values);
+      return;
+    }
+
+    // Sem duplicatas, criar normalmente
+    await performSubmission(values);
+  };
+
+  const handleDuplicationConfirm = async () => {
+    if (pendingSubmission) {
+      await performSubmission(pendingSubmission);
+      setPendingSubmission(null);
+    }
+    setDuplicationCheck(null);
+  };
+
+  const handleDuplicationCancel = () => {
+    setDuplicationCheck(null);
+    setPendingSubmission(null);
   };
 
   useEffect(() => {
@@ -288,6 +334,15 @@ export function ClientForm() {
           </form>
         </Form>
       </DialogContent>
+
+      {duplicationCheck && (
+        <DuplicationAlert
+          check={duplicationCheck as any}
+          open={!!duplicationCheck}
+          onConfirm={handleDuplicationConfirm}
+          onCancel={handleDuplicationCancel}
+        />
+      )}
     </Dialog>
   );
 }

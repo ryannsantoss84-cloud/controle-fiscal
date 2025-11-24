@@ -29,6 +29,9 @@ import {
 import { Plus, Loader2 } from "lucide-react";
 import { useInstallments } from "@/hooks/useInstallments";
 import { useClients } from "@/hooks/useClients";
+import { checkInstallmentDuplication, InstallmentDuplicationCheck } from "@/lib/installmentDuplicationValidator";
+import { DuplicationAlert } from "@/components/shared/DuplicationAlert";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome/Título é obrigatório"),
@@ -48,8 +51,11 @@ interface InstallmentFormProps {
 
 export function InstallmentForm({ open: controlledOpen, onOpenChange: controlledOnOpenChange }: InstallmentFormProps = {}) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const { createInstallment } = useInstallments();
-  const { clients } = useClients();
+  const { createInstallment, installments } = useInstallments();
+  const { clients } = useClients({ pageSize: 1000 });
+  const { toast } = useToast();
+  const [duplicationCheck, setDuplicationCheck] = useState<InstallmentDuplicationCheck | null>(null);
+  const [pendingSubmission, setPendingSubmission] = useState<z.infer<typeof formSchema> | null>(null);
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange || setInternalOpen;
@@ -66,11 +72,11 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const performSubmission = async (values: z.infer<typeof formSchema>) => {
     await createInstallment.mutateAsync({
       name: values.name,
       client_id: values.client_id,
-      amount: 0, // Valor irrelevante, sempre 0
+      amount: 0,
       due_date: values.due_date,
       status: values.status,
       installment_number: values.installment_number,
@@ -79,8 +85,54 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
       // @ts-ignore
       protocol: values.protocol,
     });
+    toast({
+      title: "Sucesso!",
+      description: "Parcela criada com sucesso.",
+    });
     setOpen(false);
     form.reset();
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Validar duplicatas
+    const check = checkInstallmentDuplication(
+      {
+        client_id: values.client_id,
+        installment_number: values.installment_number,
+        due_date: values.due_date,
+        protocol: values.protocol,
+      },
+      installments
+    );
+
+    // Se for duplicata exata, bloquear
+    if (check.level === 'exact') {
+      setDuplicationCheck(check);
+      return;
+    }
+
+    // Se for protocolo duplicado, alertar
+    if (check.level === 'protocol') {
+      setDuplicationCheck(check);
+      setPendingSubmission(values);
+      return;
+    }
+
+    // Sem duplicatas, criar normalmente
+    await performSubmission(values);
+  };
+
+  const handleDuplicationConfirm = async () => {
+    if (pendingSubmission) {
+      await performSubmission(pendingSubmission);
+      setPendingSubmission(null);
+    }
+    setDuplicationCheck(null);
+  };
+
+  const handleDuplicationCancel = () => {
+    setDuplicationCheck(null);
+    setPendingSubmission(null);
   };
 
   return (
@@ -258,6 +310,15 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
           </form>
         </Form>
       </DialogContent>
+
+      {duplicationCheck && (
+        <DuplicationAlert
+          check={duplicationCheck as any}
+          open={!!duplicationCheck}
+          onConfirm={handleDuplicationConfirm}
+          onCancel={handleDuplicationCancel}
+        />
+      )}
     </Dialog>
   );
 }
