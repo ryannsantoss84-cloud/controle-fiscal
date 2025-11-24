@@ -2,115 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================================
-   PALETA CORPORATIVA ELEGANTE - AZUL MARINHO, CINZA CARVÃO E DOURADO
-   Design sofisticado e profissional para aplicações empresariais
-   ============================================================================ */
-
 @layer base {
   :root {
-    /* Background: Cinza muito claro (quase branco) */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-
-    /* Card: Branco puro com sombras elegantes */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    /* Popover */
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    /* Primary: Azul Marinho Corporativo Elegante */
-    --primary: 217 91% 35%;
-    --primary-foreground: 0 0% 100%;
-
-    /* Secondary: Cinza Carvão Sofisticado */
-    --secondary: 214 14% 93%;
-    --secondary-foreground: 222 47% 11%;
-
-    /* Muted: Cinza suave para textos secundários */
-    --muted: 214 14% 93%;
-    --muted-foreground: 215 16% 47%;
-
-    /* Accent: Dourado/Âmbar Corporativo */
-    --accent: 43 74% 66%;
-    --accent-foreground: 222 47% 11%;
-
-    /* Destructive: Vermelho elegante */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    /* Success: Verde corporativo */
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-
-    /* Warning: Laranja elegante */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    /* Info: Azul claro */
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-
-    /* Borders & Inputs: Cinza muito suave */
-    --border: 214 20% 88%;
-    --input: 214 20% 88%;
-    --ring: 217 91% 35%;
-
-    /* Radius: Bordas suaves e elegantes */
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
   }
 
   .dark {
-    /* Background: Cinza carvão escuro */
-    --background: 222 47% 11%;
-    --foreground: 210 20% 98%;
-
-    /* Card: Cinza escuro com leve elevação */
-    --card: 217 33% 17%;
-    --card-foreground: 210 20% 98%;
-
-    /* Popover */
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 20% 98%;
-
-    /* Primary: Azul mais claro para contraste */
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-
-    /* Secondary */
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 20% 98%;
-
-    /* Muted */
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    /* Accent: Dourado mais suave */
-    --accent: 43 74% 66%;
-    --accent-foreground: 222 47% 11%;
-
-    /* Destructive */
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 20% 98%;
-
-    /* Success */
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-
-    /* Warning */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    /* Info */
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-
-    /* Borders - Lighter for visibility */
-    --border: 217 20% 30%;
-    --input: 217 20% 30%;
-    --ring: 217 91% 60%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -120,55 +65,19 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
-
-  /* Tipografia Corporativa */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-semibold tracking-tight;
-    letter-spacing: -0.02em;
-  }
-
-  h1 {
-    @apply text-4xl;
-  }
-
-  h2 {
-    @apply text-3xl;
-  }
-
-  h3 {
-    @apply text-2xl;
+    @apply bg-background text-foreground;
   }
 }
 
 /* ============================================================================
-   SCROLLBAR ELEGANTE
+   DARK MODE IMPROVEMENTS
+   Lighter borders and better contrast for dark mode
    ============================================================================ */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-muted/30;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-primary/20 rounded-full;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary/40;
+.dark {
+  --border: 217.2 32.6% 25%;
+  /* Lighter border for better visibility */
+  --input: 217.2 32.6% 25%;
+  /* Lighter input border */
 }
 
 /* ============================================================================
@@ -376,4 +285,27 @@
 [role="dialog"] [role="listbox"] {
   pointer-events: auto !important;
   touch-action: pan-y;
+}
+
+/* Fix scroll for Command component specifically */
+[cmdk-root] {
+  pointer-events: auto !important;
+}
+
+[cmdk-input] {
+  pointer-events: auto !important;
+}
+
+[cmdk-list] {
+  pointer-events: auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+[cmdk-group] {
+  pointer-events: auto !important;
+}
+
+[cmdk-item] {
+  pointer-events: auto !important;
 }
