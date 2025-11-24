@@ -139,13 +139,24 @@ export function useClients(options: UseClientsOptions = {}) {
 
                   // Criar data corretamente: começar com dia 1 do mês atual
                   let dueDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                  // Depois setar o dia desejado
-                  dueDate.setDate(dayOfMonth);
+
+                  // Calcular o último dia do mês
+                  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+                  // Usar o menor entre o dia desejado e o último dia do mês
+                  // Isso garante que dia 31 em fevereiro vire dia 28/29
+                  const validDay = Math.min(dayOfMonth, lastDayOfMonth);
+
+                  // Setar o dia válido
+                  dueDate.setDate(validDay);
 
                   // Se o dia já passou neste mês, joga para o próximo
                   if (dueDate < today) {
                     dueDate.setMonth(dueDate.getMonth() + 1);
-                    dueDate.setDate(dayOfMonth); // Re-setar o dia após mudar o mês
+                    // Recalcular o dia válido para o próximo mês
+                    const nextMonthLastDay = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 0).getDate();
+                    const nextMonthValidDay = Math.min(dayOfMonth, nextMonthLastDay);
+                    dueDate.setDate(nextMonthValidDay);
                   }
 
                   // APLICAR REGRA DE FINAL DE SEMANA CONFIGURÁVEL

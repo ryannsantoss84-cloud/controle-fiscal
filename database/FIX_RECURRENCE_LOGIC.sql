@@ -17,6 +17,8 @@ DECLARE
     recurrence_type TEXT;
     target_month INT;
     should_generate BOOLEAN;
+    last_day_of_month INT;
+    valid_day INT;
 BEGIN
     -- Calcular o próximo mês
     next_month_date := target_date + INTERVAL '1 month';
@@ -56,14 +58,21 @@ BEGIN
                         END;
 
                         IF should_generate THEN
-                            -- Pegar o dia do mês
+                            -- Pegar o dia do mês desejado
                             day_to_use := COALESCE((item_record->>'day_of_month')::INT, 10);
                             
-                            -- Construir a data como STRING primeiro, depois converter
+                            -- Calcular o último dia do mês alvo
+                            last_day_of_month := EXTRACT(DAY FROM (DATE_TRUNC('month', next_month_date) + INTERVAL '1 month - 1 day'))::INT;
+                            
+                            -- Usar o menor entre o dia desejado e o último dia do mês
+                            -- Isso garante que dia 31 em fevereiro vire dia 28/29
+                            valid_day := LEAST(day_to_use, last_day_of_month);
+                            
+                            -- Construir a data com o dia válido
                             final_due_date := (
                                 EXTRACT(YEAR FROM next_month_date)::TEXT || '-' ||
                                 LPAD(EXTRACT(MONTH FROM next_month_date)::TEXT, 2, '0') || '-' ||
-                                LPAD(day_to_use::TEXT, 2, '0')
+                                LPAD(valid_day::TEXT, 2, '0')
                             )::DATE;
 
                             -- Inserir Obrigação (se não existir duplicata no mesmo mês)
