@@ -20,11 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Check, ChevronsUpDown, Users, User } from "lucide-react";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
 import { useInstallments } from "@/hooks/useInstallments";
-import { addMonths, format, parseISO } from "date-fns";
+import { addMonths, format } from "date-fns";
 import { adjustDueDateForWeekend, isWeekend } from "@/lib/weekendUtils";
 import { FiscalIntelligence, RecurrenceType } from "@/lib/fiscalUtils";
 import { AlertCircle } from "lucide-react";
@@ -36,18 +36,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = z.object({
+  mode: z.enum(["single", "multi"]).default("single"),
   title: z.string().min(1, "Título é obrigatório"),
   type: z.enum(["obligation", "tax"]),
   description: z.string().optional(),
-  client_id: z.string().min(1, "Cliente é obrigatório"),
+  client_id: z.string().optional(), // Optional because it depends on mode
+  client_ids: z.array(z.string()).optional(), // For multi mode
   due_date: z.date({ required_error: "Data de vencimento é obrigatória" }),
   reference_date: z.string().optional(),
   recurrence: z.enum(["none", "monthly", "quarterly", "semiannual", "annual"]),
@@ -56,6 +61,17 @@ const formSchema = z.object({
   weekend_handling: z.enum(["advance", "postpone", "next_business_day"]),
   has_installments: z.boolean().default(false),
   installment_count: z.string().optional(),
+}).refine((data) => {
+  if (data.mode === "single" && !data.client_id) {
+    return false;
+  }
+  if (data.mode === "multi" && (!data.client_ids || data.client_ids.length === 0)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Selecione pelo menos um cliente",
+  path: ["client_id"], // This might need adjustment to show error on the right field
 });
 
 export function DeadlineForm() {
@@ -63,21 +79,26 @@ export function DeadlineForm() {
   const { createDeadline } = useDeadlines();
   const { clients } = useClients();
   const { createInstallment } = useInstallments();
+  const [multiSelectOpen, setMultiSelectOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      mode: "single",
       type: "obligation",
       recurrence: "none",
       weekend_handling: "next_business_day",
       has_installments: false,
       installment_count: "1",
+      client_ids: [],
     },
   });
 
   const watchedDueDate = form.watch("due_date");
   const watchedWeekendHandling = form.watch("weekend_handling");
   const hasInstallments = form.watch("has_installments");
+  const mode = form.watch("mode");
+  const selectedClientIds = form.watch("client_ids") || [];
 
   const dueDateIsWeekend = watchedDueDate && isWeekend(watchedDueDate);
   const adjustedDate =
@@ -98,46 +119,65 @@ export function DeadlineForm() {
       )
       : format(dueDate, "yyyy-MM-dd");
 
-    const deadline = await createDeadline.mutateAsync({
-      title: values.title,
-      type: values.type,
-      description: values.description,
-      client_id: values.client_id,
-      due_date: adjustedDueDate,
-      reference_date: values.reference_date ? `${values.reference_date}-01` : null,
-      original_due_date: originalDueDate,
-      status: "pending",
-      recurrence: values.recurrence,
-      notes: values.notes,
-      responsible: values.responsible,
-      weekend_handling: values.weekend_handling,
-    });
+    const targetClients = values.mode === "single"
+      ? [values.client_id!]
+      : values.client_ids!;
 
-    if (
-      values.has_installments &&
-      values.installment_count &&
-      parseInt(values.installment_count) > 1
-    ) {
-      const totalInstallments = parseInt(values.installment_count);
-      for (let i = 1; i <= totalInstallments; i++) {
-        const installmentDueDate = format(
-          addMonths(dueDate, i - 1),
-          "yyyy-MM-dd"
-        );
-        await createInstallment.mutateAsync({
-          obligation_id: deadline.id,
-          client_id: values.client_id || deadline.client_id || undefined,
-          installment_number: i,
-          total_installments: totalInstallments,
-          due_date: installmentDueDate,
+    try {
+      // Create obligations for all selected clients
+      await Promise.all(targetClients.map(async (clientId) => {
+        const deadline = await createDeadline.mutateAsync({
+          title: values.title,
+          type: values.type,
+          description: values.description,
+          client_id: clientId,
+          due_date: adjustedDueDate,
+          reference_date: values.reference_date ? `${values.reference_date}-01` : null,
+          original_due_date: originalDueDate,
           status: "pending",
-          amount: 0,
+          recurrence: values.recurrence,
+          notes: values.notes,
+          responsible: values.responsible,
+          weekend_handling: values.weekend_handling,
         });
-      }
-    }
 
-    form.reset();
-    setOpen(false);
+        if (
+          values.has_installments &&
+          values.installment_count &&
+          parseInt(values.installment_count) > 1
+        ) {
+          const totalInstallments = parseInt(values.installment_count);
+          for (let i = 1; i <= totalInstallments; i++) {
+            const installmentDueDate = format(
+              addMonths(dueDate, i - 1),
+              "yyyy-MM-dd"
+            );
+            await createInstallment.mutateAsync({
+              obligation_id: deadline.id,
+              client_id: clientId,
+              installment_number: i,
+              total_installments: totalInstallments,
+              due_date: installmentDueDate,
+              status: "pending",
+              amount: 0,
+            });
+          }
+        }
+      }));
+
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error creating deadlines:", error);
+    }
+  };
+
+  const toggleClientSelection = (clientId: string) => {
+    const current = form.getValues("client_ids") || [];
+    const updated = current.includes(clientId)
+      ? current.filter((id) => id !== clientId)
+      : [...current, clientId];
+    form.setValue("client_ids", updated);
   };
 
   return (
@@ -154,47 +194,76 @@ export function DeadlineForm() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            
+            {/* Mode Selection */}
             <FormField
               control={form.control}
-              name="type"
+              name="mode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="obligation">Obrigação</SelectItem>
-                      <SelectItem value="tax">Imposto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
+                  <FormControl>
+                    <Tabs
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="single" className="gap-2">
+                          <User className="h-4 w-4" /> Individual
+                        </TabsTrigger>
+                        <TabsTrigger value="multi" className="gap-2">
+                          <Users className="h-4 w-4" /> Em Massa (Vários Clientes)
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Título *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex: DCTF - Declaração de Débitos"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="obligation">Obrigação</SelectItem>
+                        <SelectItem value="tax">Imposto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Título *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: DCTF - Declaração de Débitos"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -205,7 +274,7 @@ export function DeadlineForm() {
                   <FormControl>
                     <Textarea
                       placeholder="Descrição detalhada do prazo"
-                      rows={3}
+                      rows={2}
                       {...field}
                     />
                   </FormControl>
@@ -214,33 +283,95 @@ export function DeadlineForm() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="client_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {mode === "single" ? (
+              <FormField
+                control={form.control}
+                name="client_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cliente *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o cliente" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="client_ids"
+                render={() => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Clientes Selecionados ({selectedClientIds.length}) *</FormLabel>
+                    <Popover open={multiSelectOpen} onOpenChange={setMultiSelectOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              selectedClientIds.length === 0 && "text-muted-foreground"
+                            )}
+                          >
+                            {selectedClientIds.length > 0
+                              ? `${selectedClientIds.length} clientes selecionados`
+                              : "Selecione os clientes"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar cliente..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                            <CommandGroup className="max-h-[200px] overflow-auto">
+                              {clients.map((client) => (
+                                <CommandItem
+                                  key={client.id}
+                                  value={client.name}
+                                  onSelect={() => toggleClientSelection(client.id)}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedClientIds.includes(client.id)
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  {client.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      A obrigação será criada para todos os clientes selecionados.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -287,7 +418,7 @@ export function DeadlineForm() {
                 name="reference_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mês de Referência (Competência)</FormLabel>
+                    <FormLabel>Mês de Referência</FormLabel>
                     <FormControl>
                       <Input type="month" {...field} />
                     </FormControl>
@@ -475,7 +606,9 @@ export function DeadlineForm() {
                 {createDeadline.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Criar Prazo
+                {mode === "multi" && selectedClientIds.length > 0
+                  ? `Criar para ${selectedClientIds.length} Clientes`
+                  : "Criar Prazo"}
               </Button>
             </div>
           </form>
