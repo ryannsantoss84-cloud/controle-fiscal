@@ -45,6 +45,9 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { checkDuplication, DuplicationCheck } from "@/lib/duplicationValidator";
+import { DuplicationAlert } from "@/components/shared/DuplicationAlert";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   mode: z.enum(["single", "multi"]).default("single"),
@@ -76,10 +79,13 @@ const formSchema = z.object({
 
 export function DeadlineForm() {
   const [open, setOpen] = useState(false);
-  const { createDeadline } = useDeadlines();
+  const { createDeadline, deadlines } = useDeadlines();
   const { clients } = useClients();
   const { createInstallment } = useInstallments();
   const [multiSelectOpen, setMultiSelectOpen] = useState(false);
+  const { toast } = useToast();
+  const [duplicationCheck, setDuplicationCheck] = useState<DuplicationCheck | null>(null);
+  const [pendingSubmission, setPendingSubmission] = useState<z.infer<typeof formSchema> | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -109,7 +115,7 @@ export function DeadlineForm() {
       )
       : null;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const performSubmission = async (values: z.infer<typeof formSchema>) => {
     const dueDate = values.due_date;
     const originalDueDate = isWeekend(dueDate) ? format(dueDate, "yyyy-MM-dd") : null;
     const adjustedDueDate = isWeekend(dueDate)
@@ -165,11 +171,68 @@ export function DeadlineForm() {
         }
       }));
 
+      const clientCount = targetClients.length;
+      toast({
+        title: "Sucesso!",
+        description: `${clientCount} ${clientCount === 1 ? 'prazo criado' : 'prazos criados'} com sucesso.`,
+      });
       form.reset();
       setOpen(false);
     } catch (error) {
       console.error("Error creating deadlines:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o prazo. Tente novamente.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Validate for duplicates (check first client in multi-mode)
+    const clientToCheck = values.mode === "single"
+      ? values.client_id!
+      : values.client_ids![0];
+
+    const check = checkDuplication(
+      {
+        client_id: clientToCheck,
+        title: values.title,
+        due_date: values.due_date,
+        type: values.type,
+        recurrence: values.recurrence,
+      },
+      deadlines
+    );
+
+    // If exact duplicate, show alert and block
+    if (check.level === 'exact') {
+      setDuplicationCheck(check);
+      return;
+    }
+
+    // If probable duplicate or recurrence conflict, ask for confirmation
+    if (check.level === 'probable' || check.level === 'recurrence') {
+      setDuplicationCheck(check);
+      setPendingSubmission(values);
+      return;
+    }
+
+    // No duplicates, proceed normally
+    await performSubmission(values);
+  };
+
+  const handleDuplicationConfirm = async () => {
+    if (pendingSubmission) {
+      await performSubmission(pendingSubmission);
+      setPendingSubmission(null);
+    }
+    setDuplicationCheck(null);
+  };
+
+  const handleDuplicationCancel = () => {
+    setDuplicationCheck(null);
+    setPendingSubmission(null);
   };
 
   const toggleClientSelection = (clientId: string) => {
@@ -194,7 +257,7 @@ export function DeadlineForm() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            
+
             {/* Mode Selection */}
             <FormField
               control={form.control}
@@ -614,6 +677,15 @@ export function DeadlineForm() {
           </form>
         </Form>
       </DialogContent>
+
+      {duplicationCheck && (
+        <DuplicationAlert
+          check={duplicationCheck}
+          open={!!duplicationCheck}
+          onConfirm={handleDuplicationConfirm}
+          onCancel={handleDuplicationCancel}
+        />
+      )}
     </Dialog>
   );
 }
