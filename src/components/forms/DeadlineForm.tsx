@@ -404,7 +404,7 @@ export function DeadlineForm() {
                           <CommandInput placeholder="Buscar cliente..." />
                           <CommandList>
                             <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                            <CommandGroup className="max-h-[200px] overflow-auto">
+                            <CommandGroup className="max-h-[200px] overflow-auto" style={{ pointerEvents: 'auto' }}>
                               {clients.map((client) => (
                                 <CommandItem
                                   key={client.id}
