@@ -11,16 +11,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Deadline } from "@/hooks/useDeadlines";
 import { formatDate } from "@/lib/utils";
-import { Building2, Calendar, User, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Building2, Calendar, User, AlertTriangle } from "lucide-react";
 import { isWeekend } from "date-fns";
 import { useState } from "react";
 import { DeadlineDetails } from "./DeadlineDetails";
+import { SortableColumn } from "@/components/shared/SortableColumn";
+import { SortDirection } from "@/hooks/useSorting";
 
 interface DeadlineTableProps {
     deadlines: Deadline[];
     selectedIds: Set<string>;
     onToggleSelect: (id: string) => void;
     onSelectAll: () => void;
+    sortConfig: { key: string; direction: SortDirection };
+    onSort: (key: string) => void;
 }
 
 const statusConfig = {
@@ -35,6 +39,8 @@ export function DeadlineTable({
     selectedIds,
     onToggleSelect,
     onSelectAll,
+    sortConfig,
+    onSort,
 }: DeadlineTableProps) {
     const [selectedDeadline, setSelectedDeadline] = useState<Deadline | null>(null);
 
@@ -51,11 +57,51 @@ export function DeadlineTable({
                                     aria-label="Select all"
                                 />
                             </TableHead>
-                            <TableHead>Título</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Vencimento</TableHead>
-                            <TableHead>Responsável</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>
+                                <SortableColumn
+                                    label="Título"
+                                    sortKey="title"
+                                    currentSortKey={sortConfig.key}
+                                    currentSortDirection={sortConfig.direction}
+                                    onSort={onSort}
+                                />
+                            </TableHead>
+                            <TableHead>
+                                <SortableColumn
+                                    label="Cliente"
+                                    sortKey="clients.name"
+                                    currentSortKey={sortConfig.key}
+                                    currentSortDirection={sortConfig.direction}
+                                    onSort={onSort}
+                                />
+                            </TableHead>
+                            <TableHead>
+                                <SortableColumn
+                                    label="Vencimento"
+                                    sortKey="due_date"
+                                    currentSortKey={sortConfig.key}
+                                    currentSortDirection={sortConfig.direction}
+                                    onSort={onSort}
+                                />
+                            </TableHead>
+                            <TableHead>
+                                <SortableColumn
+                                    label="Responsável"
+                                    sortKey="responsible"
+                                    currentSortKey={sortConfig.key}
+                                    currentSortDirection={sortConfig.direction}
+                                    onSort={onSort}
+                                />
+                            </TableHead>
+                            <TableHead>
+                                <SortableColumn
+                                    label="Status"
+                                    sortKey="status"
+                                    currentSortKey={sortConfig.key}
+                                    currentSortDirection={sortConfig.direction}
+                                    onSort={onSort}
+                                />
+                            </TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>

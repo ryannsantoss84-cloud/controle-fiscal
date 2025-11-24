@@ -35,6 +35,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
+import { useSorting } from "@/hooks/useSorting";
+import { Deadline } from "@/hooks/useDeadlines";
 
 export default function Deadlines() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -51,10 +53,11 @@ export default function Deadlines() {
   const { clients } = useClients();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
 
   // Filtragem
   const filteredDeadlines = useMemo(() => {
-    return deadlines.filter((deadline) => {
+    const filtered = deadlines.filter((deadline) => {
       const matchesSearch = deadline.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         deadline.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesClient = clientFilter === "all" || deadline.client_id === clientFilter;
@@ -62,7 +65,9 @@ export default function Deadlines() {
 
       return matchesSearch && matchesClient && matchesStatus;
     });
-  }, [deadlines, searchTerm, clientFilter, statusFilter]);
+
+    return sortData(filtered);
+  }, [deadlines, searchTerm, clientFilter, statusFilter, sortData]);
 
   // Paginação
   const totalPages = Math.ceil(filteredDeadlines.length / itemsPerPage);
@@ -292,6 +297,8 @@ export default function Deadlines() {
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           onSelectAll={handleSelectAll}
+          sortConfig={sortConfig}
+          onSort={handleSort}
         />
       )}
 

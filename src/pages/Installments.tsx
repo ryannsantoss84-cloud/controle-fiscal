@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,12 @@ import { useInstallments } from "@/hooks/useInstallments";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
 import { InstallmentCard } from "@/components/installments/InstallmentCard";
+import { InstallmentTable } from "@/components/installments/InstallmentTable";
 import { InstallmentForm } from "@/components/forms/InstallmentForm";
 import { Search, Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
+import { useSorting } from "@/hooks/useSorting";
 
 export default function Installments() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +25,7 @@ export default function Installments() {
   const { installments, isLoading } = useInstallments();
   const { deadlines } = useDeadlines();
   const { clients } = useClients({ pageSize: 100 });
+  const { sortConfig, handleSort, sortData } = useSorting<any>('due_date');
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Carregando...</div>;
@@ -37,22 +40,26 @@ export default function Installments() {
     };
   });
 
-  const filteredInstallments = enrichedInstallments.filter((installment) => {
-    const matchesSearch =
-      installment.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      installment.protocol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      installment.deadline?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      installment.deadline?.clients?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      installment.clients?.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredInstallments = useMemo(() => {
+    const filtered = enrichedInstallments.filter((installment) => {
+      const matchesSearch =
+        installment.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        installment.protocol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        installment.deadline?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        installment.deadline?.clients?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        installment.clients?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || installment.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || installment.status === statusFilter;
 
-    const matchesClient = clientFilter === "all" ||
-      installment.deadline?.client_id === clientFilter ||
-      installment.client_id === clientFilter;
+      const matchesClient = clientFilter === "all" ||
+        installment.deadline?.client_id === clientFilter ||
+        installment.client_id === clientFilter;
 
-    return matchesSearch && matchesStatus && matchesClient;
-  });
+      return matchesSearch && matchesStatus && matchesClient;
+    });
+
+    return sortData(filtered);
+  }, [enrichedInstallments, searchTerm, statusFilter, clientFilter, sortData]);
 
   const stats = {
     total: installments.length,
@@ -162,11 +169,11 @@ export default function Installments() {
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
-          {filteredInstallments.map((installment) => (
-            <InstallmentCard key={installment.id} installment={installment} />
-          ))}
-        </div>
+        <InstallmentTable
+          installments={filteredInstallments}
+          sortConfig={sortConfig}
+          onSort={handleSort}
+        />
       )}
     </div>
   );
