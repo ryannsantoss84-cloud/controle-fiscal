@@ -309,3 +309,12 @@
 [cmdk-item] {
   pointer-events: auto !important;
 }
+
+/* Fix for Popover inside Dialog - CRITICAL for multi-select */
+[data-radix-dialog-content] [data-radix-popover-content] {
+  pointer-events: auto !important;
+}
+
+[data-radix-dialog-content] [data-radix-popover-content] * {
+  pointer-events: auto !important;
+}
