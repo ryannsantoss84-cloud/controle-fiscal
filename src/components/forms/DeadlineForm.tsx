@@ -80,7 +80,7 @@ const formSchema = z.object({
 export function DeadlineForm() {
   const [open, setOpen] = useState(false);
   const { createDeadline, deadlines } = useDeadlines();
-  const { clients } = useClients();
+  const { clients } = useClients({ pageSize: 1000 }); // Buscar todos os clientes
   const { createInstallment } = useInstallments();
   const [multiSelectOpen, setMultiSelectOpen] = useState(false);
   const { toast } = useToast();
