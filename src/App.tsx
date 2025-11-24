@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Templates from "./pages/Templates";
 import NotFound from "./pages/NotFound";
+import { CommandPalette } from "./components/layout/CommandPalette";
 
 const queryClient = new QueryClient();
 
@@ -87,17 +88,23 @@ const AppContent = () => {
   }, [location.pathname]);
 
   return (
-    <Routes>
-      <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
-      <Route path="/deadlines" element={<AppLayout><Deadlines /></AppLayout>} />
-      <Route path="/clients" element={<AppLayout><Clients /></AppLayout>} />
-      <Route path="/installments" element={<AppLayout><Installments /></AppLayout>} />
-      <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
-      <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
-      <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
-      <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">
+        Pular para o conteúdo principal
+      </a>
+      <CommandPalette />
+      <Routes>
+        <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+        <Route path="/deadlines" element={<AppLayout><Deadlines /></AppLayout>} />
+        <Route path="/clients" element={<AppLayout><Clients /></AppLayout>} />
+        <Route path="/installments" element={<AppLayout><Installments /></AppLayout>} />
+        <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
+        <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
+        <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
+        <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 

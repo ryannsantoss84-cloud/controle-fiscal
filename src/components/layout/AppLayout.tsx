@@ -1,3 +1,4 @@
+
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
@@ -13,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out">
           {/* Header Corporativo Elegante com Glassmorphism */}
-          <header className="sticky top-0 z-50 flex h-16 items-center gap-4 glass-nav shadow-elegant">
+          <header className="sticky top-0 z-50 flex h-16 items-center gap-4 glass-nav shadow-elegant px-6 md:px-8 lg:px-10">
             <SidebarTrigger className="hover:bg-primary/10 transition-colors" />
             <div className="flex-1">
               <TopBar />

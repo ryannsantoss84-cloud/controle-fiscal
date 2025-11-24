@@ -9,7 +9,9 @@ import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
 import { InstallmentCard } from "@/components/installments/InstallmentCard";
 import { InstallmentForm } from "@/components/forms/InstallmentForm";
-import { Search, Plus, LayoutGrid, List as ListIcon } from "lucide-react";
+import { Search, Plus } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar } from "@/components/layout/FilterBar";
 
 export default function Installments() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,19 +62,17 @@ export default function Installments() {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text-primary">Parcelamentos</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie todas as parcelas de seus prazos
-          </p>
-        </div>
-        <Button onClick={() => setFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Parcela
-        </Button>
-      </div>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <PageHeader
+        title="Parcelamentos"
+        description="Gerencie todas as parcelas de seus prazos"
+        actions={
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Parcela
+          </Button>
+        }
+      />
 
       <InstallmentForm open={formOpen} onOpenChange={setFormOpen} />
 
@@ -115,82 +115,59 @@ export default function Installments() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome, protocolo, título ou cliente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="paid">Pago</SelectItem>
-                <SelectItem value="overdue">Atrasado</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={clientFilter} onValueChange={setClientFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Clientes</SelectItem>
-                {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('grid')}
-                title="Visualização em Grade"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('list')}
-                title="Visualização em Lista"
-              >
-                <ListIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredInstallments.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              Nenhuma parcela encontrada
-            </div>
-          ) : viewMode === 'grid' ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredInstallments.map((installment) => (
-                <InstallmentCard key={installment.id} installment={installment} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredInstallments.map((installment) => (
-                <InstallmentCard key={installment.id} installment={installment} />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <FilterBar viewMode={viewMode} onViewModeChange={setViewMode}>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, protocolo, título ou cliente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Status</SelectItem>
+            <SelectItem value="pending">Pendente</SelectItem>
+            <SelectItem value="paid">Pago</SelectItem>
+            <SelectItem value="overdue">Atrasado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={clientFilter} onValueChange={setClientFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Cliente" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Clientes</SelectItem>
+            {clients?.map((client) => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterBar>
+
+      {filteredInstallments.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed">
+          Nenhuma parcela encontrada
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredInstallments.map((installment) => (
+            <InstallmentCard key={installment.id} installment={installment} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredInstallments.map((installment) => (
+            <InstallmentCard key={installment.id} installment={installment} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

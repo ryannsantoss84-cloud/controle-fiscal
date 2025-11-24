@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Search, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { useSorting } from "@/hooks/useSorting";
 import { SortableColumn } from "@/components/shared/SortableColumn";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar } from "@/components/layout/FilterBar";
 
 export default function Clients() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -82,17 +85,13 @@ export default function Clients() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text-primary">Clientes</h1>
-          <p className="text-muted-foreground mt-1">
-            Base de clientes ({totalCount} registros)
-          </p>
-        </div>
-        <ClientForm />
-      </div>
+      <PageHeader
+        title="Clientes"
+        description={`Base de clientes (${totalCount} registros)`}
+        actions={<ClientForm />}
+      />
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-xl border shadow-sm items-center">
+      <FilterBar viewMode={viewMode} onViewModeChange={setViewMode}>
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -116,27 +115,7 @@ export default function Clients() {
             <SelectItem value="lucro_real">Lucro Real</SelectItem>
           </SelectContent>
         </Select>
-
-        {/* View Toggle */}
-        <div className="flex items-center border rounded-md bg-muted/50 p-1">
-          <Button
-            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setViewMode('grid')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setViewMode('list')}
-          >
-            <ListIcon className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      </FilterBar>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">

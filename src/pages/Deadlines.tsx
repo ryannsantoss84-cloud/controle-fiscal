@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
@@ -25,13 +26,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { DeadlineCard } from "@/components/deadlines/DeadlineCard";
 import { DeadlineTable } from "@/components/deadlines/DeadlineTable";
 import { DeadlineForm } from "@/components/forms/DeadlineForm";
-import { LayoutGrid, List, RefreshCw, Trash2, CheckCircle2, RotateCcw, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { RefreshCw, Trash2, CheckCircle2, RotateCcw, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FilterBar } from "@/components/layout/FilterBar";
 
 export default function Deadlines() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -157,53 +160,51 @@ export default function Deadlines() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight gradient-text-primary">Prazos Fiscais</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie obrigações e impostos ({totalCount} registros)
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !targetDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {targetDate ? format(targetDate, "MMMM 'de' yyyy", { locale: ptBR }) : <span>Escolha o mês</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={targetDate}
-                  onSelect={(date) => date && setTargetDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+      <PageHeader
+        title="Prazos Fiscais"
+        description={`Gerencie obrigações e impostos (${totalCount} registros)`}
+        actions={
+          <>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !targetDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {targetDate ? format(targetDate, "MMMM 'de' yyyy", { locale: ptBR }) : <span>Escolha o mês</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={targetDate}
+                    onSelect={(date) => date && setTargetDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
 
-            <Button
-              onClick={handleGenerateMonthly}
-              disabled={isGenerating}
-              variant="secondary"
-              className="gap-2 shadow-sm whitespace-nowrap"
-            >
-              <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-              {isGenerating ? "Gerando..." : "Gerar"}
-            </Button>
-          </div>
-          <DeadlineForm />
-        </div>
-      </div>
+              <Button
+                onClick={handleGenerateMonthly}
+                disabled={isGenerating}
+                variant="secondary"
+                className="gap-2 shadow-sm whitespace-nowrap"
+              >
+                <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                {isGenerating ? "Gerando..." : "Gerar"}
+              </Button>
+            </div>
+            <DeadlineForm />
+          </>
+        }
+      />
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-xl border shadow-sm items-center">
+      <FilterBar viewMode={viewMode} onViewModeChange={setViewMode}>
         <Input
           placeholder="Buscar por título..."
           value={searchTerm}
@@ -233,27 +234,7 @@ export default function Deadlines() {
             <SelectItem value="overdue">Atrasada</SelectItem>
           </SelectContent>
         </Select>
-
-        {/* View Toggle */}
-        <div className="flex items-center border rounded-md bg-muted/50 p-1">
-          <Button
-            variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setViewMode('grid')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      </FilterBar>
 
       {selectedIds.size > 0 && (
         <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg flex items-center justify-between animate-in slide-in-from-top-2">

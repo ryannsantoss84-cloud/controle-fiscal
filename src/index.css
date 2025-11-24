@@ -107,9 +107,9 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* Borders */
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    /* Borders - Lighter for visibility */
+    --border: 217 20% 30%;
+    --input: 217 20% 30%;
     --ring: 217 91% 60%;
   }
 }
@@ -355,4 +355,25 @@
 
 .corporate-section {
   @apply py-12 sm:py-16 lg:py-20;
+}
+
+/* ============================================================================
+   FIX: SCROLLING IN DROPDOWNS & POPOVERS
+   Resolves issue where mouse wheel doesn't work in Select/Command lists
+   ============================================================================ */
+[data-radix-popper-content-wrapper] {
+  max-height: 90vh !important;
+}
+
+.cmdk-list {
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto !important;
+}
+
+[role="listbox"],
+[role="dialog"] [role="listbox"] {
+  pointer-events: auto !important;
+  touch-action: pan-y;
 }
