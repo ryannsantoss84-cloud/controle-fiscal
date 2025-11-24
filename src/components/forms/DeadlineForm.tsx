@@ -399,10 +399,10 @@ export function DeadlineForm() {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0">
-                        <Command>
-                          <CommandInput placeholder="Buscar cliente..." />
-                          <CommandList>
+                      <PopoverContent className="w-[400px] p-0" style={{ pointerEvents: 'auto' }}>
+                        <Command style={{ pointerEvents: 'auto' }}>
+                          <CommandInput placeholder="Buscar cliente..." style={{ pointerEvents: 'auto' }} />
+                          <CommandList style={{ pointerEvents: 'auto', overflowY: 'auto' }}>
                             <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
                             <CommandGroup className="max-h-[200px] overflow-auto" style={{ pointerEvents: 'auto' }}>
                               {clients.map((client) => (
@@ -410,6 +410,7 @@ export function DeadlineForm() {
                                   key={client.id}
                                   value={client.name}
                                   onSelect={() => toggleClientSelection(client.id)}
+                                  style={{ pointerEvents: 'auto' }}
                                 >
                                   <Check
                                     className={cn(
