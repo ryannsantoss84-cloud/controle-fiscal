@@ -22,6 +22,7 @@ export interface Obligation {
   completedDate?: Date;
   status: ObligationStatus;
   recurrence: RecurrenceType;
+  sphere?: "federal" | "state" | "municipal";
   createdAt: Date;
   updatedAt: Date;
 }

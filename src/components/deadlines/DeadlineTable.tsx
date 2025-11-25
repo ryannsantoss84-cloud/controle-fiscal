@@ -79,6 +79,15 @@ export function DeadlineTable({
                             </TableHead>
                             <TableHead>
                                 <SortableColumn
+                                    label="Esfera"
+                                    sortKey="sphere"
+                                    currentSortKey={sortConfig.key}
+                                    currentSortDirection={sortConfig.direction}
+                                    onSort={onSort}
+                                />
+                            </TableHead>
+                            <TableHead>
+                                <SortableColumn
                                     label="Vencimento"
                                     sortKey="due_date"
                                     currentSortKey={sortConfig.key}
@@ -147,13 +156,24 @@ export function DeadlineTable({
                                             )}
                                         </TableCell>
                                         <TableCell>
+                                            {deadline.sphere ? (
+                                                <Badge variant="outline" className="font-normal text-xs capitalize">
+                                                    {deadline.sphere === 'federal' ? 'Federal' : deadline.sphere === 'state' ? 'Estadual' : 'Municipal'}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
                                             {deadline.due_date && (
                                                 <div className="flex items-center gap-2 text-sm">
                                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                                     <div className="flex items-center gap-2">
                                                         <span>{formatDate(deadline.due_date)}</span>
                                                         {isWeekendDue && (
-                                                            <AlertTriangle className="h-3 w-3 text-warning" title="Vence no final de semana" />
+                                                            <div title="Vence no final de semana">
+                                                                <AlertTriangle className="h-3 w-3 text-warning" />
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>

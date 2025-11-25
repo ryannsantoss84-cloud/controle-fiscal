@@ -66,7 +66,14 @@ export function DeadlineCard({ deadline, isSelected, onToggleSelect }: DeadlineC
             </div>
             <div className="flex flex-col items-end gap-2">
               <Badge variant={config.badgeVariant} className="font-normal">{config.label}</Badge>
-              <Badge variant={deadline.type === 'tax' ? 'destructive' : 'outline'} className="font-normal text-xs">{deadline.type === 'tax' ? 'Imposto' : 'Obrigação'}</Badge>
+              <div className="flex gap-1">
+                <Badge variant={deadline.type === 'tax' ? 'destructive' : 'outline'} className="font-normal text-xs">{deadline.type === 'tax' ? 'Imposto' : 'Obrigação'}</Badge>
+                {deadline.sphere && (
+                  <Badge variant="outline" className="font-normal text-xs capitalize">
+                    {deadline.sphere === 'federal' ? 'Federal' : deadline.sphere === 'state' ? 'Estadual' : 'Municipal'}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           {deadline.description && (

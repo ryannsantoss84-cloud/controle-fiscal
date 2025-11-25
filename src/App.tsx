@@ -10,7 +10,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/theme-provider";
 import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
-import Deadlines from "./pages/Deadlines";
+import Taxes from "./pages/Taxes";
+import Obligations from "./pages/Obligations";
 import Clients from "./pages/Clients";
 import Calendar from "./pages/Calendar";
 import Installments from "./pages/Installments";
@@ -95,7 +96,8 @@ const AppContent = () => {
       <CommandPalette />
       <Routes>
         <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
-        <Route path="/deadlines" element={<AppLayout><Deadlines /></AppLayout>} />
+        <Route path="/taxes" element={<AppLayout><Taxes /></AppLayout>} />
+        <Route path="/obligations" element={<AppLayout><Obligations /></AppLayout>} />
         <Route path="/clients" element={<AppLayout><Clients /></AppLayout>} />
         <Route path="/installments" element={<AppLayout><Installments /></AppLayout>} />
         <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />

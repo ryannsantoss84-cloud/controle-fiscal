@@ -64,6 +64,7 @@ const formSchema = z.object({
   weekend_handling: z.enum(["advance", "postpone", "next_business_day"]),
   has_installments: z.boolean().default(false),
   installment_count: z.string().optional(),
+  sphere: z.enum(["federal", "state", "municipal"]).optional(),
 }).refine((data) => {
   if (data.mode === "single" && !data.client_id) {
     return false;
@@ -145,6 +146,7 @@ export function DeadlineForm() {
           notes: values.notes,
           responsible: values.responsible,
           weekend_handling: values.weekend_handling,
+          sphere: values.sphere,
         });
 
         if (
@@ -327,6 +329,32 @@ export function DeadlineForm() {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="sphere"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Esfera</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a esfera" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="federal">Federal</SelectItem>
+                      <SelectItem value="state">Estadual</SelectItem>
+                      <SelectItem value="municipal">Municipal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

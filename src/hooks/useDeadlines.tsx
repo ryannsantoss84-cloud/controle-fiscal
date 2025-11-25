@@ -20,6 +20,7 @@ export interface Deadline {
   original_due_date?: string;
   reference_date?: string;
   amount?: number;
+  sphere?: "federal" | "state" | "municipal";
   created_at: string;
   updated_at: string;
   clients?: {

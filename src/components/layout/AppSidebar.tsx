@@ -37,7 +37,8 @@ const mainNav = [
 ];
 
 const operationalNav = [
-  { title: "Prazos & Obrigações", url: "/deadlines", icon: FileText },
+  { title: "Impostos", url: "/taxes", icon: FileText },
+  { title: "Obrigações", url: "/obligations", icon: FileText },
   { title: "Parcelamentos", url: "/installments", icon: CreditCard },
   { title: "Clientes", url: "/clients", icon: Users },
 ];
