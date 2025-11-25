@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface Client {
   id: string;
@@ -55,6 +55,24 @@ export function useClients(options: UseClientsOptions = {}) {
     },
     placeholderData: (previousData) => previousData, // Mantém dados antigos enquanto carrega novos (UX melhor)
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:clients')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'clients' },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ["clients"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const createClient = useMutation({
     mutationFn: async (client: Omit<Client, "id" | "user_id" | "created_at" | "updated_at">) => {

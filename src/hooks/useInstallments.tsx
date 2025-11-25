@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface Installment {
   id: string;
@@ -51,7 +52,26 @@ export function useInstallments(obligationId?: string) {
       if (error) throw error;
       return data;
     },
+    placeholderData: (previousData) => previousData, // Mantém dados antigos enquanto carrega novos (UX melhor)
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:installments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'installments' },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ["installments"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const createInstallment = useMutation({
     mutationFn: async (installment: Omit<Installment, "id" | "created_at" | "updated_at">) => {

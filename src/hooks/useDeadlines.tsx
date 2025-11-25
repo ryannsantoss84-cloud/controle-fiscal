@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface Deadline {
   id: string;
@@ -66,7 +67,7 @@ export function useDeadlines(options: UseDeadlinesOptions = {}) {
 
       // Filtros
       if (statusFilter && statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        query = query.eq("status", statusFilter as any);
       }
 
       if (typeFilter && typeFilter !== "all") {
@@ -105,6 +106,24 @@ export function useDeadlines(options: UseDeadlinesOptions = {}) {
     },
     placeholderData: (previousData) => previousData,
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:obligations')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'obligations' },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ["deadlines"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const createDeadline = useMutation({
     mutationFn: async (deadline: Omit<Deadline, "id" | "user_id" | "created_at" | "updated_at" | "clients">) => {
