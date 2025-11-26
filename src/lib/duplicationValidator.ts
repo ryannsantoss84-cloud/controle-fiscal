@@ -96,7 +96,8 @@ export function checkDuplication(
 
         return (
             areTitlesSimilar(o.title, newObligation.title) &&
-            isSameMonth(existingDate, newDate)
+            isSameMonth(existingDate, newDate) &&
+            o.type === newObligation.type
         );
     });
 
@@ -117,6 +118,7 @@ export function checkDuplication(
             return (
                 normalizeTitle(o.title) === normalizedTitle &&
                 isSameMonth(existingDate, newDate) &&
+                o.type === newObligation.type &&
                 o.recurrence &&
                 o.recurrence !== 'none' &&
                 o.recurrence !== newObligation.recurrence
