@@ -20,7 +20,8 @@ import { Deadline } from "@/hooks/useDeadlines";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { MonthPicker } from "@/components/ui/month-picker";
-import { User, CheckCircle2, Search } from "lucide-react";
+import { User, CheckCircle2, Search, FileText } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function Taxes() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -175,52 +176,63 @@ export default function Taxes() {
                 onReopen={handleBulkReopen}
             />
 
-            {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {paginatedDeadlines.map((deadline) => (
-                        <DeadlineCard
-                            key={deadline.id}
-                            deadline={deadline}
-                            isSelected={selectedIds.has(deadline.id)}
-                            onToggleSelect={handleToggleSelect}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <DeadlineTable
-                    deadlines={paginatedDeadlines}
-                    selectedIds={selectedIds}
-                    onToggleSelect={handleToggleSelect}
-                    onSelectAll={handleSelectAll}
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                    totalFilteredCount={filteredDeadlines.length}
+            {filteredDeadlines.length === 0 ? (
+                <EmptyState
+                    icon={FileText}
+                    title="Nenhum imposto encontrado"
+                    description="Tente ajustar os filtros ou adicione um novo imposto."
+                    action={<DeadlineForm />}
                 />
-            )}
+            ) : (
+                <>
+                    {viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {paginatedDeadlines.map((deadline) => (
+                                <DeadlineCard
+                                    key={deadline.id}
+                                    deadline={deadline}
+                                    isSelected={selectedIds.has(deadline.id)}
+                                    onToggleSelect={handleToggleSelect}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <DeadlineTable
+                            deadlines={paginatedDeadlines}
+                            selectedIds={selectedIds}
+                            onToggleSelect={handleToggleSelect}
+                            onSelectAll={handleSelectAll}
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
+                            totalFilteredCount={filteredDeadlines.length}
+                        />
+                    )}
 
-            {/* Paginação */}
-            {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-6">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                    >
-                        Anterior
-                    </Button>
-                    <span className="flex items-center px-4 text-sm font-medium">
-                        Página {page} de {totalPages}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                    >
-                        Próxima
-                    </Button>
-                </div>
+                    {/* Paginação */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center gap-2 mt-6">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                            >
+                                Anterior
+                            </Button>
+                            <span className="flex items-center px-4 text-sm font-medium">
+                                Página {page} de {totalPages}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                            >
+                                Próxima
+                            </Button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

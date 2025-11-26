@@ -6,7 +6,8 @@ import {
   Clock,
   TrendingUp,
   CalendarDays,
-  ArrowRight
+  ArrowRight,
+  Check
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +18,8 @@ import { ptBR } from "date-fns/locale";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function Dashboard() {
   const { stats, isLoading } = useDashboard();
@@ -65,15 +68,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-slide-up">
-      {/* Header Corporativo */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-bold tracking-tight gradient-text-primary">
-          Painel Operacional
-        </h1>
-        <p className="text-muted-foreground text-base">
-          Visão focada em execução para hoje, {format(new Date(), "dd 'de' MMMM", { locale: ptBR })}.
-        </p>
-      </div>
+      <PageHeader
+        title="Painel Operacional"
+        description={`Visão focada em execução para hoje, ${format(new Date(), "dd 'de' MMMM", { locale: ptBR })}.`}
+      />
 
       {/* Ações Rápidas */}
       <section>
@@ -186,7 +184,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${item.due_date === new Date().toISOString().split('T')[0] ? 'bg-orange-500/10 text-orange-700 border border-orange-500/20' :
-                          'bg-primary/10 text-primary border border-primary/20'
+                        'bg-primary/10 text-primary border border-primary/20'
                         }`}>
                         {formatDate(item.due_date)}
                       </span>
@@ -194,10 +192,11 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-muted-foreground/20" />
-                  <p>Tudo em dia! Nenhuma obrigação próxima.</p>
-                </div>
+                <EmptyState
+                  icon={Check}
+                  title="Tudo em dia!"
+                  description="Nenhuma obrigação próxima encontrada."
+                />
               )}
             </div>
           </CardContent>

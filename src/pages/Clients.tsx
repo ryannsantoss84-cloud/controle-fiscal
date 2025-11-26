@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Plus } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Plus, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import { useSorting } from "@/hooks/useSorting";
 import { SortableColumn } from "@/components/shared/SortableColumn";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 export default function Clients() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -77,12 +79,6 @@ export default function Clients() {
     }
   };
 
-  const taxRegimeLabels: Record<string, string> = {
-    simples_nacional: "Simples Nacional",
-    lucro_presumido: "Lucro Presumido",
-    lucro_real: "Lucro Real",
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <PageHeader
@@ -124,11 +120,12 @@ export default function Clients() {
       ) : (
         <>
           {filteredClients.length === 0 ? (
-            <div className="col-span-full text-center py-12 bg-muted/10 rounded-xl border border-dashed">
-              <p className="text-muted-foreground">
-                Nenhum cliente encontrado
-              </p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="Nenhum cliente encontrado"
+              description="Tente ajustar os filtros ou adicione um novo cliente."
+              action={<ClientForm />}
+            />
           ) : (
             <>
               {viewMode === 'grid' ? (
@@ -139,9 +136,7 @@ export default function Clients() {
                         <div className="flex justify-between items-start">
                           <h3 className="font-semibold text-lg truncate pr-2">{client.name}</h3>
                           {client.tax_regime && (
-                            <span className="text-[10px] px-2 py-1 rounded-full bg-muted font-medium whitespace-nowrap">
-                              {taxRegimeLabels[client.tax_regime]?.split(' ')[0]}
-                            </span>
+                            <StatusBadge status={client.tax_regime} className="text-[10px] px-2 py-0.5" />
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground font-mono">{client.cnpj}</p>
@@ -238,9 +233,7 @@ export default function Clients() {
                         <div className="text-sm text-muted-foreground">{client.phone || '-'}</div>
                         <div>
                           {client.tax_regime && (
-                            <span className="text-[10px] px-2 py-1 rounded-full bg-muted font-medium whitespace-nowrap">
-                              {taxRegimeLabels[client.tax_regime]?.split(' ')[0]}
-                            </span>
+                            <StatusBadge status={client.tax_regime} className="text-[10px] px-2 py-0.5" />
                           )}
                         </div>
                         <div className="flex justify-end gap-1">
