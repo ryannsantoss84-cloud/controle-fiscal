@@ -8,6 +8,9 @@ import { Client } from "@/hooks/useClients";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Building2, Mail, Phone, FileText, Calendar } from "lucide-react";
+import { ClientReportButton } from "./ClientReportButton";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientDetailsDialogProps {
   client: Client | null;
@@ -15,7 +18,7 @@ interface ClientDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const taxRegimeLabels = {
+const taxRegimeLabels: Record<string, string> = {
   simples_nacional: "Simples Nacional",
   lucro_presumido: "Lucro Presumido",
   lucro_real: "Lucro Real",
@@ -26,13 +29,31 @@ export function ClientDetailsDialog({
   open,
   onOpenChange,
 }: ClientDetailsDialogProps) {
+  // Fetch obligations for the report
+  const { data: obligations = [] } = useQuery({
+    queryKey: ["client-obligations", client?.id],
+    queryFn: async () => {
+      if (!client?.id) return [];
+      const { data, error } = await supabase
+        .from("obligations")
+        .select("*")
+        .eq("client_id", client.id)
+        .order("due_date", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!client?.id && open,
+  });
+
   if (!client) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>Detalhes do Cliente</DialogTitle>
+          <ClientReportButton client={client} obligations={obligations} />
         </DialogHeader>
 
         <div className="space-y-6">
@@ -58,7 +79,7 @@ export function ClientDetailsDialog({
                 <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Regime Tributário</p>
-                  <p className="font-medium">{taxRegimeLabels[client.tax_regime]}</p>
+                  <p className="font-medium">{taxRegimeLabels[client.tax_regime] || client.tax_regime}</p>
                 </div>
               </div>
             )}
