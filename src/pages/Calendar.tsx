@@ -41,9 +41,9 @@ export default function Calendar() {
   const [selectedDayItems, setSelectedDayItems] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const { deadlines } = useDeadlines();
-  const { installments } = useInstallments();
-  const { clients } = useClients();
+  const { deadlines } = useDeadlines({ pageSize: 1000 });
+  const { installments } = useInstallments({ pageSize: 1000 });
+  const { clients } = useClients({ pageSize: 1000 });
 
   // Combinar todos os itens
   const allItems = useMemo(() => [

@@ -37,7 +37,7 @@ export default function Taxes() {
         typeFilter: 'tax',
         monthFilter
     });
-    const { clients } = useClients();
+    const { clients } = useClients({ pageSize: 1000 });
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
 
     // Filtragem

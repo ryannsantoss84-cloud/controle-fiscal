@@ -14,8 +14,8 @@ export interface Notification {
 }
 
 export function useNotifications() {
-    const { deadlines } = useDeadlines();
-    const { installments } = useInstallments();
+    const { deadlines } = useDeadlines({ pageSize: 1000 });
+    const { installments } = useInstallments({ pageSize: 1000 });
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 

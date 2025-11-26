@@ -26,7 +26,7 @@ export default function Installments() {
 
   const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments();
   const { deadlines } = useDeadlines();
-  const { clients } = useClients({ pageSize: 100 });
+  const { clients } = useClients({ pageSize: 1000 });
   const { sortConfig, handleSort, sortData } = useSorting<any>('due_date');
 
   if (isLoading) {

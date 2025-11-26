@@ -44,7 +44,7 @@ export default function Deadlines() {
   const itemsPerPage = 12;
 
   const { deadlines, deleteDeadline, updateDeadline } = useDeadlines();
-  const { clients } = useClients();
+  const { clients } = useClients({ pageSize: 1000 });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');

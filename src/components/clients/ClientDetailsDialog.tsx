@@ -7,10 +7,12 @@ import {
 import { Client } from "@/hooks/useClients";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Building2, Mail, Phone, FileText, Calendar } from "lucide-react";
+import { Building2, Mail, Phone, FileText, Calendar, MapPin, Briefcase } from "lucide-react";
 import { ClientReportButton } from "./ClientReportButton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { businessActivityLabels } from "@/lib/brazil-locations";
 
 interface ClientDetailsDialogProps {
   client: Client | null;
@@ -22,6 +24,7 @@ const taxRegimeLabels: Record<string, string> = {
   simples_nacional: "Simples Nacional",
   lucro_presumido: "Lucro Presumido",
   lucro_real: "Lucro Real",
+  mei: "MEI",
 };
 
 export function ClientDetailsDialog({
@@ -52,12 +55,17 @@ export function ClientDetailsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>Detalhes do Cliente</DialogTitle>
+          <DialogTitle className="flex items-center gap-3">
+            Detalhes do Cliente
+            <StatusBadge status={client.status || 'active'} />
+          </DialogTitle>
           <ClientReportButton client={client} obligations={obligations} />
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider border-b pb-2">Informações Básicas</h4>
+
             <div className="flex items-start gap-3">
               <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div className="flex-1">
@@ -84,12 +92,28 @@ export function ClientDetailsDialog({
               </div>
             )}
 
+            {client.business_activity && (
+              <div className="flex items-start gap-3">
+                <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Atividade</p>
+                  <p className="font-medium">
+                    {businessActivityLabels[client.business_activity] || client.business_activity}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider border-b pb-2">Contato e Localização</h4>
+
             {client.email && (
               <div className="flex items-start gap-3">
                 <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{client.email}</p>
+                  <p className="font-medium break-all">{client.email}</p>
                 </div>
               </div>
             )}
@@ -100,6 +124,20 @@ export function ClientDetailsDialog({
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Telefone</p>
                   <p className="font-medium">{client.phone}</p>
+                </div>
+              </div>
+            )}
+
+            {(client.city || client.state) && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Localização</p>
+                  <p className="font-medium">
+                    {client.city && client.state
+                      ? `${client.city} - ${client.state}`
+                      : client.city || client.state}
+                  </p>
                 </div>
               </div>
             )}

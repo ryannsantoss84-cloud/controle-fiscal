@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Plus, Users } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, LayoutGrid, List as ListIcon, Plus, Users, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function Clients() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [regimeFilter, setRegimeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("active"); // Default to active
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -52,8 +53,9 @@ export default function Clients() {
       (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesRegime = regimeFilter === "all" || client.tax_regime === regimeFilter;
+    const matchesStatus = statusFilter === "all" || (client.status || 'active') === statusFilter;
 
-    return matchesSearch && matchesRegime;
+    return matchesSearch && matchesRegime && matchesStatus;
   }));
 
   const handleViewDetails = (client: Client) => {
@@ -100,15 +102,27 @@ export default function Clients() {
             className="pl-9"
           />
         </div>
+
         <Select value={regimeFilter} onValueChange={setRegimeFilter}>
-          <SelectTrigger className="w-full sm:w-[220px]">
-            <SelectValue placeholder="Filtrar por regime" />
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Regime" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os regimes</SelectItem>
             <SelectItem value="simples_nacional">Simples Nacional</SelectItem>
             <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
             <SelectItem value="lucro_real">Lucro Real</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="active">Ativos</SelectItem>
+            <SelectItem value="inactive">Inativos</SelectItem>
           </SelectContent>
         </Select>
       </FilterBar>
@@ -131,29 +145,26 @@ export default function Clients() {
               {viewMode === 'grid' ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {filteredClients.map((client) => (
-                    <Card key={client.id} className="hover:shadow-md transition-all border-l-4 border-l-transparent hover:border-l-primary">
+                    <Card key={client.id} className="hover:shadow-md transition-all border-l-4 border-l-transparent hover:border-l-primary group">
                       <CardHeader className="space-y-2 pb-3">
                         <div className="flex justify-between items-start">
-                          <h3 className="font-semibold text-lg truncate pr-2">{client.name}</h3>
-                          {client.tax_regime && (
-                            <StatusBadge status={client.tax_regime} className="text-[10px] px-2 py-0.5" />
-                          )}
+                          <h3 className="font-semibold text-lg truncate pr-2 group-hover:text-primary transition-colors">{client.name}</h3>
+                          <StatusBadge status={client.status || 'active'} className="text-[10px] px-2 py-0.5" />
                         </div>
                         <p className="text-sm text-muted-foreground font-mono">{client.cnpj}</p>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="space-y-1.5">
-                          {client.email && (
-                            <p className="text-sm truncate">
-                              <span className="text-muted-foreground mr-2">Email:</span>
-                              {client.email}
+                          {client.city && client.state && (
+                            <p className="text-sm flex items-center gap-2 text-muted-foreground">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {client.city} - {client.state}
                             </p>
                           )}
-                          {client.phone && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground mr-2">Tel:</span>
-                              {client.phone}
-                            </p>
+                          {client.tax_regime && (
+                            <div className="pt-1">
+                              <StatusBadge status={client.tax_regime} className="text-[10px] px-2 py-0.5" />
+                            </div>
                           )}
                         </div>
 
@@ -191,7 +202,7 @@ export default function Clients() {
                 </div>
               ) : (
                 <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-                  <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 p-4 border-b bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr_auto] gap-4 p-4 border-b bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     <SortableColumn
                       label="Nome / Documento"
                       sortKey="name"
@@ -200,15 +211,15 @@ export default function Clients() {
                       onSort={handleSort}
                     />
                     <SortableColumn
-                      label="Email"
-                      sortKey="email"
+                      label="Localização"
+                      sortKey="city"
                       currentSortKey={sortConfig.key as string}
                       currentSortDirection={sortConfig.direction}
                       onSort={handleSort}
                     />
                     <SortableColumn
-                      label="Telefone"
-                      sortKey="phone"
+                      label="Contato"
+                      sortKey="email"
                       currentSortKey={sortConfig.key as string}
                       currentSortDirection={sortConfig.direction}
                       onSort={handleSort}
@@ -220,21 +231,36 @@ export default function Clients() {
                       currentSortDirection={sortConfig.direction}
                       onSort={handleSort}
                     />
+                    <SortableColumn
+                      label="Status"
+                      sortKey="status"
+                      currentSortKey={sortConfig.key as string}
+                      currentSortDirection={sortConfig.direction}
+                      onSort={handleSort}
+                    />
                     <div className="text-right">Ações</div>
                   </div>
                   <div className="divide-y">
                     {filteredClients.map((client) => (
-                      <div key={client.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_auto] gap-4 p-4 items-center hover:bg-muted/5 transition-colors">
+                      <div key={client.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr_auto] gap-4 p-4 items-center hover:bg-muted/5 transition-colors">
                         <div>
                           <div className="font-medium text-sm">{client.name}</div>
                           <div className="text-xs text-muted-foreground font-mono">{client.cnpj}</div>
                         </div>
-                        <div className="text-sm text-muted-foreground truncate">{client.email || '-'}</div>
-                        <div className="text-sm text-muted-foreground">{client.phone || '-'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {client.city && client.state ? `${client.city} - ${client.state}` : '-'}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          <div>{client.email || '-'}</div>
+                          <div className="text-xs">{client.phone || ''}</div>
+                        </div>
                         <div>
                           {client.tax_regime && (
                             <StatusBadge status={client.tax_regime} className="text-[10px] px-2 py-0.5" />
                           )}
+                        </div>
+                        <div>
+                          <StatusBadge status={client.status || 'active'} className="text-[10px] px-2 py-0.5" />
                         </div>
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewDetails(client)}>

@@ -53,7 +53,7 @@ interface InstallmentEditFormProps {
 }
 
 export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess, onUpdate }: InstallmentEditFormProps) {
-  const { clients } = useClients();
+  const { clients } = useClients({ pageSize: 1000 });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

@@ -46,6 +46,7 @@ const formSchema = z.object({
   }),
   state: z.string().min(1, "Estado é obrigatório"),
   city: z.string().min(1, "Cidade é obrigatória"),
+  status: z.enum(["active", "inactive"]).default("active"),
 });
 
 export function ClientForm() {
@@ -65,6 +66,7 @@ export function ClientForm() {
       phone: "",
       state: "",
       city: "",
+      status: "active",
     },
   });
 
@@ -78,6 +80,7 @@ export function ClientForm() {
       city: values.city,
       email: values.email || undefined,
       phone: values.phone || undefined,
+      status: values.status,
     });
   };
 
@@ -176,35 +179,61 @@ export function ClientForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="tax_regime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Regime Tributário *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o regime" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="simples_nacional">
-                        Simples Nacional
-                      </SelectItem>
-                      <SelectItem value="lucro_presumido">
-                        Lucro Presumido
-                      </SelectItem>
-                      <SelectItem value="lucro_real">Lucro Real</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="tax_regime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Regime Tributário *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o regime" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="simples_nacional">
+                          Simples Nacional
+                        </SelectItem>
+                        <SelectItem value="lucro_presumido">
+                          Lucro Presumido
+                        </SelectItem>
+                        <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="inactive">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="business_activity"

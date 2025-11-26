@@ -18,12 +18,23 @@ export interface Installment {
   name?: string; // Adicionado para parcelas avulsas
 }
 
-export function useInstallments(obligationId?: string) {
+interface UseInstallmentsOptions {
+  page?: number;
+  pageSize?: number;
+  obligationId?: string;
+}
+
+export function useInstallments(options: UseInstallmentsOptions | string = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Handle both object options and legacy string obligationId
+  const { page = 1, pageSize = 50, obligationId } = typeof options === 'string'
+    ? { obligationId: options, page: 1, pageSize: 50 }
+    : options;
+
   const { data: installments = [], isLoading } = useQuery({
-    queryKey: ["installments", obligationId],
+    queryKey: ["installments", obligationId, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from("installments")
@@ -48,7 +59,11 @@ export function useInstallments(obligationId?: string) {
         query = query.eq("obligation_id", obligationId);
       }
 
-      const { data, error } = await query;
+      // Pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error } = await query.range(from, to);
       if (error) throw error;
       return data;
     },

@@ -25,9 +25,9 @@ const COLORS = {
 
 export default function Analytics() {
   const [period, setPeriod] = useState("all");
-  const { deadlines } = useDeadlines();
-  const { installments } = useInstallments();
-  const { clients } = useClients();
+  const { deadlines } = useDeadlines({ pageSize: 1000 });
+  const { installments } = useInstallments({ pageSize: 1000 });
+  const { clients } = useClients({ pageSize: 1000 });
 
   const allItems = [...deadlines, ...installments];
 

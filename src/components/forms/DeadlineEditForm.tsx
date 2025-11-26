@@ -61,7 +61,7 @@ export function DeadlineEditForm({
   onOpenChange,
 }: DeadlineEditFormProps) {
   const { updateDeadline, deleteDeadline } = useDeadlines();
-  const { clients } = useClients();
+  const { clients } = useClients({ pageSize: 1000 });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
