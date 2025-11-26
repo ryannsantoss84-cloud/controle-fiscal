@@ -314,16 +314,25 @@ export function DeadlineForm() {
 
               <FormField
                 control={form.control}
-                name="title"
+                name="sphere"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: DCTF - Declaração de Débitos"
-                        {...field}
-                      />
-                    </FormControl>
+                    <FormLabel>Esfera</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a esfera" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="federal">Federal</SelectItem>
+                        <SelectItem value="state">Estadual</SelectItem>
+                        <SelectItem value="municipal">Municipal</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -332,25 +341,16 @@ export function DeadlineForm() {
 
             <FormField
               control={form.control}
-              name="sphere"
+              name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Esfera</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a esfera" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="federal">Federal</SelectItem>
-                      <SelectItem value="state">Estadual</SelectItem>
-                      <SelectItem value="municipal">Municipal</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Título *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: DCTF - Declaração de Débitos"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -574,54 +574,56 @@ export function DeadlineForm() {
               </div>
             )}
 
-            <FormField
-              control={form.control}
-              name="weekend_handling"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tratamento de Final de Semana</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="advance">
-                        Antecipar para sexta-feira
-                      </SelectItem>
-                      <SelectItem value="postpone">
-                        Adiar para segunda-feira
-                      </SelectItem>
-                      <SelectItem value="next_business_day">
-                        Próximo dia útil (padrão)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="weekend_handling"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tratamento de Final de Semana</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="advance">
+                          Antecipar para sexta-feira
+                        </SelectItem>
+                        <SelectItem value="postpone">
+                          Adiar para segunda-feira
+                        </SelectItem>
+                        <SelectItem value="next_business_day">
+                          Próximo dia útil (padrão)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="responsible"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Nome do responsável pelo prazo"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="responsible"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Nome do responsável pelo prazo"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
