@@ -50,7 +50,7 @@ export function DeadlineCard({ deadline, isSelected, onToggleSelect }: DeadlineC
 
   return (
     <>
-      <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200 bg-card/50 cursor-pointer" onClick={() => setDetailsOpen(true)}>
+      <Card className="flex flex-col h-full border-border/40 shadow-sm hover:shadow-md transition-all duration-200 bg-card/50 cursor-pointer" onClick={() => setDetailsOpen(true)}>
         <CardHeader className="pb-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-3 flex-1">
@@ -81,7 +81,7 @@ export function DeadlineCard({ deadline, isSelected, onToggleSelect }: DeadlineC
           )}
         </CardHeader>
 
-        <CardContent className="space-y-2 pb-3">
+        <CardContent className="flex-1 space-y-2 pb-3">
           {deadline.clients && (
             <div className="flex items-center gap-2 text-sm">
               <Building2 className="h-4 w-4 text-muted-foreground" />
