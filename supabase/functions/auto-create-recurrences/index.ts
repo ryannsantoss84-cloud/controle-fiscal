@@ -33,7 +33,7 @@ serve(async (req) => {
 
     // Processar obrigações
     for (const obligation of obligations || []) {
-      const shouldCreate = checkRecurrence(obligation.recurrence, today);
+      const shouldCreate = checkRecurrence(obligation.recurrence, today, obligation.due_date);
       if (shouldCreate) {
         const newDueDate = calculateNextDueDate(
           obligation.due_date,
@@ -102,7 +102,7 @@ serve(async (req) => {
 
     // Processar impostos
     for (const tax of taxes || []) {
-      const shouldCreate = checkRecurrence(tax.recurrence, today);
+      const shouldCreate = checkRecurrence(tax.recurrence, today, tax.due_date);
       if (shouldCreate) {
         const newDueDate = calculateNextDueDate(
           tax.due_date,
@@ -178,18 +178,22 @@ serve(async (req) => {
   }
 });
 
-function checkRecurrence(recurrence: string, date: Date): boolean {
-  const month = date.getMonth() + 1;
+function checkRecurrence(recurrence: string, date: Date, originalDateStr: string): boolean {
+  const currentMonth = date.getMonth(); // 0-indexed
+  const originalDate = new Date(originalDateStr);
+  const originalMonth = originalDate.getMonth();
+
+  const diffMonths = (date.getFullYear() - originalDate.getFullYear()) * 12 + (currentMonth - originalMonth);
 
   switch (recurrence) {
     case "monthly":
-      return true;
+      return diffMonths > 0 && diffMonths % 1 === 0;
     case "quarterly":
-      return [1, 4, 7, 10].includes(month);
+      return diffMonths > 0 && diffMonths % 3 === 0;
     case "semiannual":
-      return [1, 7].includes(month);
+      return diffMonths > 0 && diffMonths % 6 === 0;
     case "annual":
-      return month === 1;
+      return diffMonths > 0 && diffMonths % 12 === 0;
     default:
       return false;
   }
@@ -201,36 +205,66 @@ function calculateNextDueDate(
   weekendHandling: string
 ): string {
   const date = new Date(originalDate);
+  let increment = 0;
+
+  switch (recurrence) {
+    case "monthly": increment = 1; break;
+    case "quarterly": increment = 3; break;
+    case "semiannual": increment = 6; break;
+    case "annual": increment = 12; break;
+  }
+
+  // Calculate target date by adding months to the original date
+  // This preserves the day of the month (e.g. 15th)
+  // Note: We need to calculate how many intervals have passed to find the *next* one relative to today
+  // But the edge function runs on the 1st of the month to create obligations for *this* month.
+  // So we just need to find the date in the current month that matches the day.
+
   const today = new Date();
+  const targetDate = new Date(today.getFullYear(), today.getMonth(), date.getDate());
 
-  // Manter o dia do vencimento original
-  const day = date.getDate();
-  const newDate = new Date(today.getFullYear(), today.getMonth(), day);
-
-  // Ajustar se cair em final de semana
-  return adjustForWeekend(newDate, weekendHandling);
+  // Adjust for weekend and holidays
+  return adjustForWeekendAndHolidays(targetDate, weekendHandling);
 }
 
-function adjustForWeekend(date: Date, handling: string): string {
-  const dayOfWeek = date.getDay();
+// Feriados Nacionais 2025/2026 (Inlined for Edge Function)
+const HOLIDAYS = [
+  "2025-01-01", "2025-03-03", "2025-03-04", "2025-04-18", "2025-04-20", "2025-04-21",
+  "2025-05-01", "2025-06-19", "2025-09-07", "2025-10-12", "2025-11-02", "2025-11-15",
+  "2025-11-20", "2025-12-25",
+  "2026-01-01", "2026-02-16", "2026-02-17", "2026-04-03", "2026-04-05", "2026-04-21",
+  "2026-05-01", "2026-06-04", "2026-09-07", "2026-10-12", "2026-11-02", "2026-11-15",
+  "2026-11-20", "2026-12-25"
+];
 
-  if (dayOfWeek === 0) { // Domingo
-    if (handling === "advance") {
-      date.setDate(date.getDate() - 2);
-    } else if (handling === "postpone") {
-      date.setDate(date.getDate() + 1);
-    } else { // next_business_day
-      date.setDate(date.getDate() + 1);
+function isHoliday(date: Date): boolean {
+  const dateString = date.toISOString().split('T')[0];
+  return HOLIDAYS.includes(dateString);
+}
+
+function adjustForWeekendAndHolidays(date: Date, handling: string): string {
+  let adjustedDate = new Date(date);
+
+  // Helper to check if a date is weekend or holiday
+  const isWeekendOrHoliday = (d: Date) => {
+    const day = d.getDay();
+    return day === 0 || day === 6 || isHoliday(d);
+  };
+
+  if (!isWeekendOrHoliday(adjustedDate)) {
+    return adjustedDate.toISOString().split("T")[0];
+  }
+
+  // Logic for adjustment
+  if (handling === "advance") {
+    while (isWeekendOrHoliday(adjustedDate)) {
+      adjustedDate.setDate(adjustedDate.getDate() - 1);
     }
-  } else if (dayOfWeek === 6) { // Sábado
-    if (handling === "advance") {
-      date.setDate(date.getDate() - 1);
-    } else if (handling === "postpone") {
-      date.setDate(date.getDate() + 2);
-    } else { // next_business_day
-      date.setDate(date.getDate() + 2);
+  } else if (handling === "postpone" || handling === "next_business_day") {
+    while (isWeekendOrHoliday(adjustedDate)) {
+      adjustedDate.setDate(adjustedDate.getDate() + 1);
     }
   }
 
-  return date.toISOString().split("T")[0];
+  return adjustedDate.toISOString().split("T")[0];
 }

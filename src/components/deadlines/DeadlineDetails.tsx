@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Deadline } from "@/hooks/useDeadlines";
 import { useInstallments } from "@/hooks/useInstallments";
-import { format, isWeekend, addDays } from "date-fns";
+import { format, isWeekend, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Building2, User, Repeat, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -40,9 +40,9 @@ export function DeadlineDetails({ deadline, open, onOpenChange }: DeadlineDetail
   const { installments } = useInstallments();
   const deadlineInstallments = installments.filter(i => i.obligation_id === deadline.id);
 
-  const isWeekendDue = deadline.due_date ? isWeekend(new Date(deadline.due_date)) : false;
+  const isWeekendDue = deadline.due_date ? isWeekend(parseISO(deadline.due_date)) : false;
   const suggestedDate = isWeekendDue && deadline.due_date
-    ? addDays(new Date(deadline.due_date), new Date(deadline.due_date).getDay() === 6 ? 2 : 1)
+    ? addDays(parseISO(deadline.due_date), parseISO(deadline.due_date).getDay() === 6 ? 2 : 1)
     : null;
 
   return (
