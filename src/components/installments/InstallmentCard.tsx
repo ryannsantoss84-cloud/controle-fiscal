@@ -3,6 +3,7 @@ import { CalendarIcon, Building2, AlertTriangle, CheckCircle2, Edit, Trash2 } fr
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { isWeekend, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useInstallments } from "@/hooks/useInstallments";
@@ -13,18 +14,21 @@ import { formatDate } from "@/lib/utils";
 
 interface InstallmentCardProps {
   installment: any;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const statusConfig = {
   pending: { label: "Pendente", variant: "secondary" as const },
   paid: { label: "Concluído", variant: "default" as const },
   overdue: { label: "Atrasado", variant: "destructive" as const },
+  completed: { label: "Concluído", variant: "default" as const },
 };
 
-export function InstallmentCard({ installment }: InstallmentCardProps) {
+export function InstallmentCard({ installment, isSelected, onToggleSelect }: InstallmentCardProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const config = statusConfig[installment.status as keyof typeof statusConfig];
+  const config = statusConfig[installment.status as keyof typeof statusConfig] || statusConfig.pending;
   const { updateInstallment, deleteInstallment } = useInstallments();
   const { toast } = useToast();
   const isWeekendDue = isWeekend(new Date(installment.due_date));
@@ -61,18 +65,27 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
 
   return (
     <>
-      <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200 bg-card/50">
+      <Card className={`border-border/40 shadow-sm hover:shadow-md transition-all duration-200 bg-card/50 ${isSelected ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
         <CardHeader className="pb-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="text-base font-medium text-foreground leading-tight">
-                Parcela {installment.installment_number}/{installment.total_installments}
-              </h3>
-              {installment.obligations?.title && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {installment.obligations.title}
-                </p>
+            <div className="flex items-start gap-3">
+              {onToggleSelect && (
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => onToggleSelect(installment.id)}
+                  className="mt-1"
+                />
               )}
+              <div>
+                <h3 className="text-base font-medium text-foreground leading-tight">
+                  Parcela {installment.installment_number}/{installment.total_installments}
+                </h3>
+                {installment.obligations?.title && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {installment.obligations.title}
+                  </p>
+                )}
+              </div>
             </div>
             <Badge variant={config.variant}>{config.label}</Badge>
           </div>
@@ -129,7 +142,7 @@ export function InstallmentCard({ installment }: InstallmentCardProps) {
               Marcar como Concluído
             </Button>
           )}
-          {(installment.status === "paid") && (
+          {(installment.status === "paid" || installment.status === "completed") && (
             <Button
               variant="outline"
               size="sm"

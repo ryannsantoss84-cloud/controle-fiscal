@@ -7,7 +7,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate } from "@/lib/utils";
 import { Calendar, DollarSign, FileText } from "lucide-react";
 import { SortableColumn } from "@/components/shared/SortableColumn";
@@ -35,6 +35,9 @@ interface InstallmentTableProps {
     installments: Installment[];
     sortConfig: { key: string; direction: SortDirection };
     onSort: (key: string) => void;
+    selectedIds?: Set<string>;
+    onToggleSelect?: (id: string) => void;
+    onSelectAll?: () => void;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -48,12 +51,25 @@ export function InstallmentTable({
     installments,
     sortConfig,
     onSort,
+    selectedIds,
+    onToggleSelect,
+    onSelectAll,
 }: InstallmentTableProps) {
+    const allSelected = installments.length > 0 && selectedIds?.size === installments.length;
+
     return (
         <div className="rounded-md border bg-card">
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <TableHead className="w-[50px]">
+                            {onSelectAll && (
+                                <Checkbox
+                                    checked={allSelected}
+                                    onCheckedChange={onSelectAll}
+                                />
+                            )}
+                        </TableHead>
                         <TableHead>
                             <SortableColumn
                                 label="Nome/Protocolo"
@@ -104,7 +120,7 @@ export function InstallmentTable({
                 <TableBody>
                     {installments.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center">
+                            <TableCell colSpan={6} className="h-24 text-center">
                                 Nenhuma parcela encontrada.
                             </TableCell>
                         </TableRow>
@@ -112,9 +128,18 @@ export function InstallmentTable({
                         installments.map((installment) => {
                             const config = statusConfig[installment.status] || statusConfig.pending;
                             const clientName = installment.clients?.name || installment.deadline?.clients?.name;
+                            const isSelected = selectedIds?.has(installment.id);
 
                             return (
                                 <TableRow key={installment.id} className="group hover:bg-muted/50">
+                                    <TableCell>
+                                        {onToggleSelect && (
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() => onToggleSelect(installment.id)}
+                                            />
+                                        )}
+                                    </TableCell>
                                     <TableCell className="font-medium">
                                         <div className="flex flex-col">
                                             <span>{installment.name || "Sem nome"}</span>

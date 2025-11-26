@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
@@ -12,12 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -26,7 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DeadlineCard } from "@/components/deadlines/DeadlineCard";
 import { DeadlineTable } from "@/components/deadlines/DeadlineTable";
 import { DeadlineForm } from "@/components/forms/DeadlineForm";
-import { RefreshCw, Trash2, CheckCircle2, RotateCcw, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,13 +30,14 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { useSorting } from "@/hooks/useSorting";
 import { Deadline } from "@/hooks/useDeadlines";
+import { useBulkActions } from "@/hooks/useBulkActions";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 export default function Deadlines() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
   const [targetDate, setTargetDate] = useState<Date>(new Date());
   const [page, setPage] = useState(1);
@@ -69,6 +63,16 @@ export default function Deadlines() {
     return sortData(filtered);
   }, [deadlines, searchTerm, clientFilter, statusFilter, sortData]);
 
+  // Bulk Actions Hook
+  const {
+    selectedIds,
+    handleToggleSelect,
+    handleSelectAll,
+    clearSelection,
+    executeBulkAction,
+    selectedCount
+  } = useBulkActions({ items: filteredDeadlines });
+
   // Paginação
   const totalPages = Math.ceil(filteredDeadlines.length / itemsPerPage);
   const paginatedDeadlines = filteredDeadlines.slice(
@@ -76,69 +80,44 @@ export default function Deadlines() {
     page * itemsPerPage
   );
 
-  const handleToggleSelect = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedIds.size === filteredDeadlines.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredDeadlines.map(d => d.id)));
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (!confirm(`Tem certeza que deseja excluir ${selectedIds.size} itens?`)) return;
-
-    try {
-      for (const id of selectedIds) {
+  const handleBulkDelete = () => executeBulkAction(
+    async (ids) => {
+      for (const id of ids) {
         await deleteDeadline.mutateAsync(id);
       }
-      setSelectedIds(new Set());
-      toast({ title: "Itens excluídos com sucesso!" });
-    } catch (error) {
-      toast({ title: "Erro ao excluir prazos", variant: "destructive" });
-    }
-  };
+    },
+    "Itens excluídos com sucesso!",
+    "Erro ao excluir prazos",
+    `Tem certeza que deseja excluir ${selectedCount} itens?`
+  );
 
-  const handleBulkComplete = async () => {
-    try {
-      await Promise.all(Array.from(selectedIds).map(id =>
+  const handleBulkComplete = () => executeBulkAction(
+    async (ids) => {
+      await Promise.all(ids.map(id =>
         updateDeadline.mutateAsync({
           id,
           status: 'completed',
           completed_at: new Date().toISOString()
         })
       ));
-      setSelectedIds(new Set());
-      toast({ title: "Itens concluídos com sucesso!" });
-    } catch (error) {
-      toast({ title: "Erro ao concluir prazos", variant: "destructive" });
-    }
-  };
+    },
+    "Itens concluídos com sucesso!",
+    "Erro ao concluir prazos"
+  );
 
-  const handleBulkReopen = async () => {
-    try {
-      await Promise.all(Array.from(selectedIds).map(id =>
+  const handleBulkReopen = () => executeBulkAction(
+    async (ids) => {
+      await Promise.all(ids.map(id =>
         updateDeadline.mutateAsync({
           id,
           status: 'pending',
           completed_at: null
         })
       ));
-      setSelectedIds(new Set());
-      toast({ title: "Itens reabertos com sucesso!" });
-    } catch (error) {
-      toast({ title: "Erro ao reabrir prazos", variant: "destructive" });
-    }
-  };
+    },
+    "Itens reabertos com sucesso!",
+    "Erro ao reabrir prazos"
+  );
 
   const handleGenerateMonthly = async () => {
     setIsGenerating(true);
@@ -241,44 +220,13 @@ export default function Deadlines() {
         </Select>
       </FilterBar>
 
-      {selectedIds.size > 0 && (
-        <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg flex items-center justify-between animate-in slide-in-from-top-2">
-          <span className="text-sm font-medium text-primary">
-            {selectedIds.size} item(s) selecionado(s)
-          </span>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default" size="sm" className="gap-2">
-                  Ações em Massa <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleBulkComplete} className="gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  Concluir Selecionados
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleBulkReopen} className="gap-2">
-                  <RotateCcw className="h-4 w-4 text-warning" />
-                  Reabrir Selecionados
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleBulkDelete} className="gap-2 text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                  Excluir Selecionados
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedIds(new Set())}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        selectedCount={selectedCount}
+        onClearSelection={clearSelection}
+        onDelete={handleBulkDelete}
+        onComplete={handleBulkComplete}
+        onReopen={handleBulkReopen}
+      />
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

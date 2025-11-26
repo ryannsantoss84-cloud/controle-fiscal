@@ -14,6 +14,8 @@ import { Search, Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { useSorting } from "@/hooks/useSorting";
+import { useBulkActions } from "@/hooks/useBulkActions";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 export default function Installments() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,7 +24,7 @@ export default function Installments() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [formOpen, setFormOpen] = useState(false);
 
-  const { installments, isLoading } = useInstallments();
+  const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments();
   const { deadlines } = useDeadlines();
   const { clients } = useClients({ pageSize: 100 });
   const { sortConfig, handleSort, sortData } = useSorting<any>('due_date');
@@ -60,6 +62,55 @@ export default function Installments() {
 
     return sortData(filtered);
   }, [enrichedInstallments, searchTerm, statusFilter, clientFilter, sortData]);
+
+  // Bulk Actions Hook
+  const {
+    selectedIds,
+    handleToggleSelect,
+    handleSelectAll,
+    clearSelection,
+    executeBulkAction,
+    selectedCount
+  } = useBulkActions({ items: filteredInstallments });
+
+  const handleBulkDelete = () => executeBulkAction(
+    async (ids) => {
+      for (const id of ids) {
+        await deleteInstallment.mutateAsync(id);
+      }
+    },
+    "Parcelas excluídas com sucesso!",
+    "Erro ao excluir parcelas",
+    `Tem certeza que deseja excluir ${selectedCount} parcelas?`
+  );
+
+  const handleBulkComplete = () => executeBulkAction(
+    async (ids) => {
+      await Promise.all(ids.map(id =>
+        updateInstallment.mutateAsync({
+          id,
+          status: 'paid',
+          paid_at: new Date().toISOString()
+        })
+      ));
+    },
+    "Parcelas marcadas como pagas!",
+    "Erro ao atualizar parcelas"
+  );
+
+  const handleBulkReopen = () => executeBulkAction(
+    async (ids) => {
+      await Promise.all(ids.map(id =>
+        updateInstallment.mutateAsync({
+          id,
+          status: 'pending',
+          paid_at: null
+        })
+      ));
+    },
+    "Parcelas reabertas com sucesso!",
+    "Erro ao reabrir parcelas"
+  );
 
   const stats = {
     total: installments.length,
@@ -158,6 +209,14 @@ export default function Installments() {
         </Select>
       </FilterBar>
 
+      <BulkActionBar
+        selectedCount={selectedCount}
+        onClearSelection={clearSelection}
+        onDelete={handleBulkDelete}
+        onComplete={handleBulkComplete}
+        onReopen={handleBulkReopen}
+      />
+
       {filteredInstallments.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed">
           Nenhuma parcela encontrada
@@ -165,7 +224,12 @@ export default function Installments() {
       ) : viewMode === 'grid' ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredInstallments.map((installment) => (
-            <InstallmentCard key={installment.id} installment={installment} />
+            <InstallmentCard
+              key={installment.id}
+              installment={installment}
+              isSelected={selectedIds.has(installment.id)}
+              onToggleSelect={handleToggleSelect}
+            />
           ))}
         </div>
       ) : (
@@ -173,6 +237,9 @@ export default function Installments() {
           installments={filteredInstallments}
           sortConfig={sortConfig}
           onSort={handleSort}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onSelectAll={handleSelectAll}
         />
       )}
     </div>

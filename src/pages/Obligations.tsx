@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
@@ -18,18 +17,19 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { useSorting } from "@/hooks/useSorting";
 import { Deadline } from "@/hooks/useDeadlines";
+import { useBulkActions } from "@/hooks/useBulkActions";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 export default function Obligations() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchTerm, setSearchTerm] = useState("");
     const [clientFilter, setClientFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [page, setPage] = useState(1);
     const itemsPerPage = 12;
 
     // Filter by type = 'obligation'
-    const { deadlines } = useDeadlines({ typeFilter: 'obligation' });
+    const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({ typeFilter: 'obligation' });
     const { clients } = useClients();
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
 
@@ -47,30 +47,61 @@ export default function Obligations() {
         return sortData(filtered);
     }, [deadlines, searchTerm, clientFilter, statusFilter, sortData]);
 
+    // Bulk Actions Hook
+    const {
+        selectedIds,
+        handleToggleSelect,
+        handleSelectAll,
+        clearSelection,
+        executeBulkAction,
+        selectedCount
+    } = useBulkActions({ items: filteredDeadlines });
+
+    const handleBulkDelete = () => executeBulkAction(
+        async (ids) => {
+            for (const id of ids) {
+                await deleteDeadline.mutateAsync(id);
+            }
+        },
+        "Obrigações excluídas com sucesso!",
+        "Erro ao excluir obrigações",
+        `Tem certeza que deseja excluir ${selectedCount} obrigações?`
+    );
+
+    const handleBulkComplete = () => executeBulkAction(
+        async (ids) => {
+            await Promise.all(ids.map(id =>
+                updateDeadline.mutateAsync({
+                    id,
+                    status: 'completed',
+                    completed_at: new Date().toISOString()
+                })
+            ));
+        },
+        "Obrigações concluídas com sucesso!",
+        "Erro ao concluir obrigações"
+    );
+
+    const handleBulkReopen = () => executeBulkAction(
+        async (ids) => {
+            await Promise.all(ids.map(id =>
+                updateDeadline.mutateAsync({
+                    id,
+                    status: 'pending',
+                    completed_at: null
+                })
+            ));
+        },
+        "Obrigações reabertas com sucesso!",
+        "Erro ao reabrir obrigações"
+    );
+
     // Paginação
     const totalPages = Math.ceil(filteredDeadlines.length / itemsPerPage);
     const paginatedDeadlines = filteredDeadlines.slice(
         (page - 1) * itemsPerPage,
         page * itemsPerPage
     );
-
-    const handleToggleSelect = (id: string) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
-        } else {
-            newSelected.add(id);
-        }
-        setSelectedIds(newSelected);
-    };
-
-    const handleSelectAll = () => {
-        if (selectedIds.size === filteredDeadlines.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(filteredDeadlines.map(d => d.id)));
-        }
-    };
 
     const totalCount = filteredDeadlines.length;
 
@@ -113,6 +144,14 @@ export default function Obligations() {
                     </SelectContent>
                 </Select>
             </FilterBar>
+
+            <BulkActionBar
+                selectedCount={selectedCount}
+                onClearSelection={clearSelection}
+                onDelete={handleBulkDelete}
+                onComplete={handleBulkComplete}
+                onReopen={handleBulkReopen}
+            />
 
             {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
