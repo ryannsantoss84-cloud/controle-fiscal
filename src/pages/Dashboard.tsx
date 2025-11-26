@@ -15,6 +15,26 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const SPHERE_COLORS = {
+  federal: '#3b82f6', // blue-500
+  state: '#10b981',   // emerald-500
+  municipal: '#f59e0b' // amber-500
+};
 
 export default function Dashboard() {
   const { stats, isLoading } = useDashboard();
@@ -115,6 +135,94 @@ export default function Dashboard() {
               {stats?.total_pending || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Total em aberto</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráficos de Distribuição */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Distribuição por Esfera */}
+        <Card className="glass-card border-none shadow-elegant">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              Distribuição por Esfera
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              {stats?.by_sphere && (stats.by_sphere.federal + stats.by_sphere.state + stats.by_sphere.municipal) > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Federal', value: stats.by_sphere.federal },
+                        { name: 'Estadual', value: stats.by_sphere.state },
+                        { name: 'Municipal', value: stats.by_sphere.municipal }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      <Cell key="federal" fill={SPHERE_COLORS.federal} />
+                      <Cell key="state" fill={SPHERE_COLORS.state} />
+                      <Cell key="municipal" fill={SPHERE_COLORS.municipal} />
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Sem dados suficientes
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Distribuição por Tipo */}
+        <Card className="glass-card border-none shadow-elegant">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <TrendingUp className="h-5 w-5 text-primary" />
+              </div>
+              Impostos vs Obrigações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              {stats?.by_type && (stats.by_type.tax + stats.by_type.obligation) > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { name: 'Impostos', value: stats.by_type.tax },
+                      { name: 'Obrigações', value: stats.by_type.obligation }
+                    ]}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#8884d8">
+                      <Cell key="tax" fill="#ef4444" /> {/* red-500 */}
+                      <Cell key="obligation" fill="#3b82f6" /> {/* blue-500 */}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Sem dados suficientes
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -60,6 +60,7 @@ const itemSchema = z.object({
     }),
     day_of_month: z.coerce.number().min(1).max(31).optional(),
     weekend_rule: z.enum(["postpone", "anticipate", "keep"]).optional().default("postpone"),
+    sphere: z.enum(["federal", "state", "municipal"]).optional(),
 });
 
 const formSchema = z.object({
@@ -147,6 +148,28 @@ function SortableItem({ id, index, remove, form }: { id: string; index: number; 
                                             <SelectContent>
                                                 <SelectItem value="obligation">Obrigação</SelectItem>
                                                 <SelectItem value="tax">Imposto</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name={`items.${index}.sphere`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Esfera</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="federal">Federal</SelectItem>
+                                                <SelectItem value="state">Estadual</SelectItem>
+                                                <SelectItem value="municipal">Municipal</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </FormItem>
@@ -274,7 +297,7 @@ export function TemplateForm({ template, open: controlledOpen, onOpenChange: con
             description: "",
             tax_regimes: [],
             business_activities: [],
-            items: [{ title: "", type: "obligation", recurrence: "monthly", weekend_rule: "postpone" }],
+            items: [{ title: "", type: "obligation", recurrence: "monthly", weekend_rule: "postpone", sphere: "federal" }],
         },
     });
 
@@ -316,7 +339,7 @@ export function TemplateForm({ template, open: controlledOpen, onOpenChange: con
                 description: "",
                 tax_regimes: [],
                 business_activities: [],
-                items: [{ title: "", type: "obligation", recurrence: "monthly", weekend_rule: "postpone" }],
+                items: [{ title: "", type: "obligation", recurrence: "monthly", weekend_rule: "postpone", sphere: "federal" }],
             });
         }
     }, [template, form]);
@@ -483,7 +506,7 @@ export function TemplateForm({ template, open: controlledOpen, onOpenChange: con
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ title: "", type: "obligation", recurrence: "monthly", weekend_rule: "postpone" })}
+                                    onClick={() => append({ title: "", type: "obligation", recurrence: "monthly", weekend_rule: "postpone", sphere: "federal" })}
                                 >
                                     <Plus className="h-4 w-4 mr-2" /> Adicionar Obrigação
                                 </Button>

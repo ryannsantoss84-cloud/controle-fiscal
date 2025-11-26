@@ -35,6 +35,7 @@ export default function Templates() {
             type: template.type,
             recurrence: template.recurrence,
             day: template.day_of_month?.toString() || "",
+            sphere: template.items?.[0]?.sphere || "",
         });
         navigate(`/deadlines?${params.toString()}`);
     };

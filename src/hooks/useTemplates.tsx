@@ -9,6 +9,7 @@ export interface TemplateItem {
     recurrence: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
     day_of_month?: number;
     weekend_rule?: "postpone" | "anticipate" | "keep";
+    sphere?: "federal" | "state" | "municipal";
 }
 
 export interface Template {

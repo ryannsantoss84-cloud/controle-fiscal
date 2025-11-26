@@ -7,6 +7,15 @@ export interface DashboardStats {
     overdue: number;
     completed_month: number;
     total_pending: number;
+    by_sphere: {
+        federal: number;
+        state: number;
+        municipal: number;
+    };
+    by_type: {
+        tax: number;
+        obligation: number;
+    };
 }
 
 export function useDashboard() {
@@ -94,12 +103,53 @@ export function useDashboard() {
                     .select("*", { count: "exact", head: true })
                     .eq("status", "pending");
 
+                // Breakdown by Sphere (only obligations have sphere currently)
+                const { count: federalCount } = await supabase
+                    .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("sphere", "federal")
+                    .neq("status", "completed");
+
+                const { count: stateCount } = await supabase
+                    .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("sphere", "state")
+                    .neq("status", "completed");
+
+                const { count: municipalCount } = await supabase
+                    .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("sphere", "municipal")
+                    .neq("status", "completed");
+
+                // Breakdown by Type
+                const { count: taxCount } = await supabase
+                    .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("type", "tax")
+                    .neq("status", "completed");
+
+                const { count: obligationCount } = await supabase
+                    .from("obligations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("type", "obligation")
+                    .neq("status", "completed");
+
                 return {
                     total_active_clients: clientCount || 0,
                     due_today: (obligationsDueToday || 0) + (installmentsDueToday || 0),
                     overdue: (obligationsOverdue || 0) + (installmentsOverdue || 0),
                     completed_month: (obligationsCompleted || 0) + (installmentsCompleted || 0),
                     total_pending: (obligationsPending || 0) + (installmentsPending || 0),
+                    by_sphere: {
+                        federal: federalCount || 0,
+                        state: stateCount || 0,
+                        municipal: municipalCount || 0,
+                    },
+                    by_type: {
+                        tax: taxCount || 0,
+                        obligation: obligationCount || 0,
+                    },
                 } as DashboardStats;
 
             } catch (error) {
@@ -110,6 +160,8 @@ export function useDashboard() {
                     overdue: 0,
                     completed_month: 0,
                     total_pending: 0,
+                    by_sphere: { federal: 0, state: 0, municipal: 0 },
+                    by_type: { tax: 0, obligation: 0 },
                 } as DashboardStats;
             }
         },
