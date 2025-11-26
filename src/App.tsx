@@ -8,20 +8,31 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { useAutoGenerate } from "./hooks/useAutoGenerate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/theme-provider";
-import { useEffect } from "react";
-import Dashboard from "./pages/Dashboard";
-import Taxes from "./pages/Taxes";
-import Obligations from "./pages/Obligations";
-import Clients from "./pages/Clients";
-import Calendar from "./pages/Calendar";
-import Installments from "./pages/Installments";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import Templates from "./pages/Templates";
-import NotFound from "./pages/NotFound";
+import { useEffect, lazy, Suspense } from "react";
 import { CommandPalette } from "./components/layout/CommandPalette";
 
+// Lazy load pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Taxes = lazy(() => import("./pages/Taxes"));
+const Obligations = lazy(() => import("./pages/Obligations"));
+const Clients = lazy(() => import("./pages/Clients"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const Installments = lazy(() => import("./pages/Installments"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Templates = lazy(() => import("./pages/Templates"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
 const queryClient = new QueryClient();
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-screen w-full bg-background">
+    <div className="flex flex-col items-center gap-4">
+      <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      <p className="text-muted-foreground animate-pulse">Carregando...</p>
+    </div>
+  </div>
+);
 
 const AppContent = () => {
   useAutoGenerate();
@@ -94,18 +105,20 @@ const AppContent = () => {
         Pular para o conteúdo principal
       </a>
       <CommandPalette />
-      <Routes>
-        <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
-        <Route path="/taxes" element={<AppLayout><Taxes /></AppLayout>} />
-        <Route path="/obligations" element={<AppLayout><Obligations /></AppLayout>} />
-        <Route path="/clients" element={<AppLayout><Clients /></AppLayout>} />
-        <Route path="/installments" element={<AppLayout><Installments /></AppLayout>} />
-        <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
-        <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
-        <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
-        <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+          <Route path="/taxes" element={<AppLayout><Taxes /></AppLayout>} />
+          <Route path="/obligations" element={<AppLayout><Obligations /></AppLayout>} />
+          <Route path="/clients" element={<AppLayout><Clients /></AppLayout>} />
+          <Route path="/installments" element={<AppLayout><Installments /></AppLayout>} />
+          <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
+          <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
+          <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
+          <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 };
