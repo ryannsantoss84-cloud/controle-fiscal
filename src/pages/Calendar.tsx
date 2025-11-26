@@ -363,8 +363,12 @@ export default function Calendar() {
                     key={dayIndex}
                     className={`
                       min-h-[120px] p-2 border-r border-b transition-colors relative group
-                      ${!isCurrentMonth ? "bg-muted/40 opacity-50" : isWeekend ? "bg-muted/10" : "bg-background"}
-                      ${isTodayDate ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""}
+                      ${!isCurrentMonth
+                        ? "bg-slate-100/80 dark:bg-slate-900/80 opacity-60 grayscale-[0.5]"
+                        : isWeekend
+                          ? "bg-slate-50/80 dark:bg-slate-900/30"
+                          : "bg-background"}
+                      ${isTodayDate ? "bg-blue-50/50 dark:bg-blue-900/10 ring-1 ring-inset ring-primary/20" : ""}
                       hover:bg-muted/20 cursor-pointer
                     `}
                     onClick={() => handleDayClick(day, dayItems)}
