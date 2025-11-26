@@ -43,49 +43,85 @@ export function ClientReportButton({ client, obligations }: ClientReportButtonPr
         doc.text(`Email: ${client.email || "N/A"}`, 20, 76);
         doc.text(`Regime: ${client.tax_regime ? client.tax_regime.replace('_', ' ').toUpperCase() : "N/A"}`, 100, 70);
 
-        item.status === 'paid' ? 'Pago' :
-            item.status === 'overdue' ? 'Atrasado' :
-                item.status === 'in_progress' ? 'Em Andamento' : 'Pendente'
+        // Summary Stats
+        const total = obligations.length;
+        const pending = obligations.filter(o => o.status === 'pending').length;
+        const completed = obligations.filter(o => o.status === 'completed' || o.status === 'paid').length;
+        const overdue = obligations.filter(o => o.status === 'overdue').length;
+
+        // Stats Row
+        const startY = 95;
+        const margin = 14;
+        const pageWidth = 210;
+        const contentWidth = pageWidth - (margin * 2); // 182
+        const gap = 6;
+        const boxWidth = (contentWidth - (gap * 3)) / 4; // 41
+        const boxHeight = 20;
+
+        // Helper for Stats Box
+        const drawStatBox = (x: number, label: string, value: number, color: [number, number, number]) => {
+            doc.setFillColor(...color);
+            doc.roundedRect(x, startY, boxWidth, boxHeight, 2, 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.text(value.toString(), x + boxWidth / 2, startY + 12, { align: 'center' });
+            doc.setFontSize(8);
+            doc.text(label, x + boxWidth / 2, startY + 17, { align: 'center' });
+        };
+
+        drawStatBox(margin, "TOTAL", total, [100, 116, 139]); // Slate
+        drawStatBox(margin + boxWidth + gap, "PENDENTES", pending, [245, 158, 11]); // Amber
+        drawStatBox(margin + (boxWidth + gap) * 2, "CONCLUÍDAS", completed, [16, 185, 129]); // Emerald
+        drawStatBox(margin + (boxWidth + gap) * 3, "ATRASADAS", overdue, [239, 68, 68]); // Red
+
+        // Table
+        const tableData = obligations.map(item => [
+            item.title,
+            format(new Date(item.due_date), "dd/MM/yyyy"),
+            item.status === 'completed' ? 'Concluído' :
+                item.status === 'paid' ? 'Pago' :
+                    item.status === 'overdue' ? 'Atrasado' :
+                        item.status === 'in_progress' ? 'Em Andamento' : 'Pendente'
         ]);
 
-    autoTable(doc, {
-        startY: 125,
-        head: [['Obrigação', 'Vencimento', 'Status']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: {
-            fillColor: [63, 81, 181],
-            fontSize: 10,
-            halign: 'center'
-        },
-        styles: {
-            fontSize: 9,
-            cellPadding: 3,
-        },
-        columnStyles: {
-            0: { cellWidth: 'auto' },
-            1: { cellWidth: 40, halign: 'center' },
-            2: { cellWidth: 40, halign: 'center' }
-        },
-        alternateRowStyles: { fillColor: [248, 250, 252] }
-    });
+        autoTable(doc, {
+            startY: 125,
+            head: [['Obrigação', 'Vencimento', 'Status']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [63, 81, 181],
+                fontSize: 10,
+                halign: 'center'
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+            },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { cellWidth: 40, halign: 'center' },
+                2: { cellWidth: 40, halign: 'center' }
+            },
+            alternateRowStyles: { fillColor: [248, 250, 252] }
+        });
 
-    // Footer
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Gerado por Control Fiscal - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
-    }
+        // Footer
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Gerado por Control Fiscal - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+        }
 
-    doc.save(`relatorio_${client.name.replace(/\s+/g, '_').toLowerCase()}_${format(new Date(), "yyyyMMdd")}.pdf`);
-};
+        doc.save(`relatorio_${client.name.replace(/\s+/g, '_').toLowerCase()}_${format(new Date(), "yyyyMMdd")}.pdf`);
+    };
 
-return (
-    <Button onClick={generatePDF} variant="outline" className="gap-2">
-        <FileDown className="h-4 w-4" />
-        Gerar Relatório
-    </Button>
-);
+    return (
+        <Button onClick={generatePDF} variant="outline" className="gap-2">
+            <FileDown className="h-4 w-4" />
+            Gerar Relatório
+        </Button>
+    );
 }
