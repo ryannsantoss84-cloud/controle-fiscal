@@ -41,6 +41,25 @@ serve(async (req) => {
           obligation.weekend_handling || "next_business_day"
         );
 
+        // Verificar se já existe uma obrigação para este cliente, com mesmo título e mês/ano de vencimento
+        const nextDateObj = new Date(newDueDate);
+        const startOfMonth = new Date(nextDateObj.getFullYear(), nextDateObj.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(nextDateObj.getFullYear(), nextDateObj.getMonth() + 1, 0).toISOString();
+
+        const { data: existingObligation } = await supabaseClient
+          .from("obligations")
+          .select("id")
+          .eq("client_id", obligation.client_id)
+          .eq("title", obligation.title)
+          .gte("due_date", startOfMonth)
+          .lte("due_date", endOfMonth)
+          .maybeSingle();
+
+        if (existingObligation) {
+          console.log(`Skipping obligation creation: ${obligation.title} for client ${obligation.client_id} (already exists for ${newDueDate})`);
+          continue;
+        }
+
         const { data: newObligation, error } = await supabaseClient.from("obligations").insert({
           title: obligation.title,
           description: obligation.description,
@@ -91,6 +110,25 @@ serve(async (req) => {
           tax.weekend_handling || "next_business_day"
         );
 
+        // Verificar se já existe um imposto para este cliente, com mesmo tipo e mês/ano de vencimento
+        const nextDateObj = new Date(newDueDate);
+        const startOfMonth = new Date(nextDateObj.getFullYear(), nextDateObj.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(nextDateObj.getFullYear(), nextDateObj.getMonth() + 1, 0).toISOString();
+
+        const { data: existingTax } = await supabaseClient
+          .from("taxes")
+          .select("id")
+          .eq("client_id", tax.client_id)
+          .eq("tax_type_name", tax.tax_type_name)
+          .gte("due_date", startOfMonth)
+          .lte("due_date", endOfMonth)
+          .maybeSingle();
+
+        if (existingTax) {
+          console.log(`Skipping tax creation: ${tax.tax_type_name} for client ${tax.client_id} (already exists for ${newDueDate})`);
+          continue;
+        }
+
         const { data: newTax, error } = await supabaseClient.from("taxes").insert({
           client_id: tax.client_id,
           tax_type_name: tax.tax_type_name,
@@ -122,9 +160,9 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Recurrences processed", 
+      JSON.stringify({
+        success: true,
+        message: "Recurrences processed",
         createdCount,
         date: today.toISOString()
       }),
@@ -142,7 +180,7 @@ serve(async (req) => {
 
 function checkRecurrence(recurrence: string, date: Date): boolean {
   const month = date.getMonth() + 1;
-  
+
   switch (recurrence) {
     case "monthly":
       return true;
@@ -164,7 +202,7 @@ function calculateNextDueDate(
 ): string {
   const date = new Date(originalDate);
   const today = new Date();
-  
+
   // Manter o dia do vencimento original
   const day = date.getDate();
   const newDate = new Date(today.getFullYear(), today.getMonth(), day);
@@ -175,7 +213,7 @@ function calculateNextDueDate(
 
 function adjustForWeekend(date: Date, handling: string): string {
   const dayOfWeek = date.getDay();
-  
+
   if (dayOfWeek === 0) { // Domingo
     if (handling === "advance") {
       date.setDate(date.getDate() - 2);
@@ -193,6 +231,6 @@ function adjustForWeekend(date: Date, handling: string): string {
       date.setDate(date.getDate() + 2);
     }
   }
-  
+
   return date.toISOString().split("T")[0];
 }
