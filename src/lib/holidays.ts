@@ -1,5 +1,4 @@
-// Feriados Nacionais Brasileiros 2025 e 2026
-// Formato: YYYY-MM-DD
+import { format } from "date-fns";
 
 export const HOLIDAYS = [
     // 2025
@@ -36,6 +35,6 @@ export const HOLIDAYS = [
 ];
 
 export function isHoliday(date: Date): boolean {
-    const dateString = date.toISOString().split('T')[0];
+    const dateString = format(date, 'yyyy-MM-dd');
     return HOLIDAYS.includes(dateString);
 }
