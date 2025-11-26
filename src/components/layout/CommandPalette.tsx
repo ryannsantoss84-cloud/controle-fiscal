@@ -56,9 +56,13 @@ export function CommandPalette() {
             <CommandList>
                 <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
                 <CommandGroup heading="Sugestões">
-                    <CommandItem onSelect={() => runCommand(() => navigate("/deadlines"))}>
+                    <CommandItem onSelect={() => runCommand(() => navigate("/taxes"))}>
                         <FileText className="mr-2 h-4 w-4" />
-                        <span>Prazos e Obrigações</span>
+                        <span>Impostos</span>
+                    </CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => navigate("/obligations"))}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Obrigações</span>
                     </CommandItem>
                     <CommandItem onSelect={() => runCommand(() => navigate("/clients"))}>
                         <Users className="mr-2 h-4 w-4" />
@@ -86,9 +90,13 @@ export function CommandPalette() {
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Ações Rápidas">
-                    <CommandItem onSelect={() => runCommand(() => { navigate("/deadlines"); })}>
+                    <CommandItem onSelect={() => runCommand(() => { navigate("/taxes"); })}>
                         <Plus className="mr-2 h-4 w-4" />
-                        <span>Novo Prazo</span>
+                        <span>Novo Imposto</span>
+                    </CommandItem>
+                    <CommandItem onSelect={() => runCommand(() => { navigate("/obligations"); })}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        <span>Nova Obrigação</span>
                     </CommandItem>
                     <CommandItem onSelect={() => runCommand(() => { navigate("/clients"); })}>
                         <User className="mr-2 h-4 w-4" />
