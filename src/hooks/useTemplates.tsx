@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export interface TemplateItem {
     title: string;
@@ -44,6 +45,24 @@ export function useTemplates() {
             return data as Template[];
         },
     });
+
+    // Real-time subscription
+    useEffect(() => {
+        const channel = supabase
+            .channel('public:templates')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'templates' },
+                (payload) => {
+                    queryClient.invalidateQueries({ queryKey: ["templates"] });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [queryClient]);
 
     const createTemplate = useMutation({
         mutationFn: async (template: Omit<Template, "id" | "user_id" | "created_at" | "updated_at">) => {

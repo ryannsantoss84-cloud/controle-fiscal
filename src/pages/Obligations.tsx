@@ -25,11 +25,15 @@ export default function Obligations() {
     const [searchTerm, setSearchTerm] = useState("");
     const [clientFilter, setClientFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [monthFilter, setMonthFilter] = useState<string>(""); // YYYY-MM format
     const [page, setPage] = useState(1);
     const itemsPerPage = 12;
 
     // Filter by type = 'obligation'
-    const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({ typeFilter: 'obligation' });
+    const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
+        typeFilter: 'obligation',
+        monthFilter: monthFilter ? new Date(monthFilter + "-02") : undefined
+    });
     const { clients } = useClients();
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
 
@@ -119,6 +123,12 @@ export default function Obligations() {
                     value={searchTerm}
                     onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                     className="flex-1"
+                />
+                <Input
+                    type="month"
+                    value={monthFilter}
+                    onChange={(e) => { setMonthFilter(e.target.value); setPage(1); }}
+                    className="w-[180px]"
                 />
                 <Select value={clientFilter} onValueChange={(v) => { setClientFilter(v); setPage(1); }}>
                     <SelectTrigger className="w-full sm:w-[180px]">

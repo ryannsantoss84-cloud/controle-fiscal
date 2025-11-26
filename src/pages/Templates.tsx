@@ -1,12 +1,21 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Calendar, Receipt, Pencil, Trash2, Loader2, Eye } from "lucide-react";
+import { FileText, Plus, Calendar, Receipt, Pencil, Trash2, Loader2, Eye, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTemplates, type Template } from "@/hooks/useTemplates";
 import { TemplateForm } from "@/components/templates/TemplateForm";
 import { TemplateDetailsDialog } from "@/components/templates/TemplateDetailsDialog";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { FilterBar } from "@/components/layout/FilterBar";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,6 +35,11 @@ export default function Templates() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [viewingTemplate, setViewingTemplate] = useState<Template | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+    // Filters
+    const [searchTerm, setSearchTerm] = useState("");
+    const [typeFilter, setTypeFilter] = useState("all");
+    const [recurrenceFilter, setRecurrenceFilter] = useState("all");
 
     const handleUseTemplate = (template: Template) => {
         // Navegar para criação de prazo com dados pré-preenchidos
@@ -67,6 +81,17 @@ export default function Templates() {
         annual: "Anual",
     };
 
+    const filteredTemplates = useMemo(() => {
+        return templates.filter((template) => {
+            const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (template.description && template.description.toLowerCase().includes(searchTerm.toLowerCase()));
+            const matchesType = typeFilter === "all" || template.type === typeFilter;
+            const matchesRecurrence = recurrenceFilter === "all" || template.recurrence === recurrenceFilter;
+
+            return matchesSearch && matchesType && matchesRecurrence;
+        });
+    }, [templates, searchTerm, typeFilter, recurrenceFilter]);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -94,9 +119,44 @@ export default function Templates() {
                 />
             </div>
 
+            <FilterBar>
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar templates..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os tipos</SelectItem>
+                        <SelectItem value="tax">Imposto</SelectItem>
+                        <SelectItem value="obligation">Obrigação</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={recurrenceFilter} onValueChange={setRecurrenceFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Recorrência" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todas as recorrências</SelectItem>
+                        <SelectItem value="none">Única</SelectItem>
+                        <SelectItem value="monthly">Mensal</SelectItem>
+                        <SelectItem value="quarterly">Trimestral</SelectItem>
+                        <SelectItem value="semiannual">Semestral</SelectItem>
+                        <SelectItem value="annual">Anual</SelectItem>
+                    </SelectContent>
+                </Select>
+            </FilterBar>
+
             {/* Templates Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {templates.map((template) => (
+                {filteredTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow group relative">
                         <CardHeader className="pb-3">
                             <div className="flex items-start justify-between">
@@ -172,11 +232,15 @@ export default function Templates() {
                 ))}
             </div>
 
-            {templates.length === 0 && (
+            {filteredTemplates.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                     <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <h3 className="text-lg font-medium">Nenhum template encontrado</h3>
-                    <p className="mb-4">Crie seu primeiro template para agilizar o cadastro de prazos.</p>
+                    <p className="mb-4">
+                        {searchTerm || typeFilter !== "all" || recurrenceFilter !== "all"
+                            ? "Tente ajustar os filtros para encontrar o que procura."
+                            : "Crie seu primeiro template para agilizar o cadastro de prazos."}
+                    </p>
                     <Button onClick={() => setIsFormOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Criar Template

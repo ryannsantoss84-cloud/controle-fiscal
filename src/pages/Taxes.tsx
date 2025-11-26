@@ -25,11 +25,15 @@ export default function Taxes() {
     const [searchTerm, setSearchTerm] = useState("");
     const [clientFilter, setClientFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [monthFilter, setMonthFilter] = useState<string>(""); // YYYY-MM format
     const [page, setPage] = useState(1);
     const itemsPerPage = 12;
 
     // Filter by type = 'tax'
-    const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({ typeFilter: 'tax' });
+    const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
+        typeFilter: 'tax',
+        monthFilter: monthFilter ? new Date(monthFilter + "-02") : undefined // Adding day to ensure timezone stability
+    });
     const { clients } = useClients();
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
 
@@ -41,6 +45,7 @@ export default function Taxes() {
             const matchesClient = clientFilter === "all" || deadline.client_id === clientFilter;
             const matchesStatus = statusFilter === "all" || deadline.status === statusFilter;
 
+            // Month filter is handled by the hook, but we keep this for consistency if needed
             return matchesSearch && matchesClient && matchesStatus;
         });
 
@@ -119,6 +124,12 @@ export default function Taxes() {
                     value={searchTerm}
                     onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                     className="flex-1"
+                />
+                <Input
+                    type="month"
+                    value={monthFilter}
+                    onChange={(e) => { setMonthFilter(e.target.value); setPage(1); }}
+                    className="w-[180px]"
                 />
                 <Select value={clientFilter} onValueChange={(v) => { setClientFilter(v); setPage(1); }}>
                     <SelectTrigger className="w-full sm:w-[180px]">
