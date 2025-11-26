@@ -10,6 +10,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Settings as SettingsIcon, Save, Moon, Sun, Building } from "lucide-react";
 import { useTheme } from "next-themes";
 
+interface SettingsData {
+    office_name: string | null;
+    office_document: string | null;
+    default_weekend_handling: string | null;
+    auto_create_recurrences: boolean | null;
+}
+
 export default function Settings() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
@@ -39,7 +46,7 @@ export default function Settings() {
             }
 
             if (data) {
-                const settingsData = data as any;
+                const settingsData = data as SettingsData;
                 setSettings({
                     office_name: settingsData.office_name || "",
                     office_document: settingsData.office_document || "",
@@ -47,7 +54,7 @@ export default function Settings() {
                     auto_create_recurrences: settingsData.auto_create_recurrences ?? true,
                 });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Erro ao carregar configurações:", error);
         } finally {
             setLoading(false);
@@ -76,10 +83,11 @@ export default function Settings() {
                 title: "Configurações salvas!",
                 description: "Suas preferências foram atualizadas com sucesso.",
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
             toast({
                 title: "Erro ao salvar",
-                description: error.message,
+                description: errorMessage,
                 variant: "destructive",
             });
         } finally {

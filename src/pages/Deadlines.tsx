@@ -122,19 +122,21 @@ export default function Deadlines() {
   const handleGenerateMonthly = async () => {
     setIsGenerating(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.rpc as any)('generate_monthly_obligations', {
         target_date: targetDate.toISOString().split('T')[0]
       });
 
       if (error) throw error;
-      const result = data as any;
+      const result = data as { obligations_created: number };
       toast({
         title: "Automação Concluída",
         description: `${result.obligations_created} novas obrigações geradas para ${format(targetDate, 'MMMM/yyyy', { locale: ptBR })}.`
       });
       queryClient.invalidateQueries({ queryKey: ["deadlines"] });
-    } catch (error: any) {
-      toast({ title: "Erro na automação", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({ title: "Erro na automação", description: errorMessage, variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }

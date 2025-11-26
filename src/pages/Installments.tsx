@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useInstallments } from "@/hooks/useInstallments";
-import { useDeadlines } from "@/hooks/useDeadlines";
+import { useInstallments, Installment } from "@/hooks/useInstallments";
+import { useDeadlines, Deadline } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
 import { InstallmentCard } from "@/components/installments/InstallmentCard";
 import { InstallmentTable } from "@/components/installments/InstallmentTable";
@@ -17,6 +17,10 @@ import { useSorting } from "@/hooks/useSorting";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
+type EnrichedInstallment = Installment & {
+  deadline?: Deadline;
+};
+
 export default function Installments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -27,20 +31,17 @@ export default function Installments() {
   const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments();
   const { deadlines } = useDeadlines();
   const { clients } = useClients({ pageSize: 1000 });
-  const { sortConfig, handleSort, sortData } = useSorting<any>('due_date');
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
-  }
 
   // Enriquecer parcelas com dados da obrigação
-  const enrichedInstallments = installments.map(installment => {
+  const enrichedInstallments: EnrichedInstallment[] = installments.map(installment => {
     const deadline = deadlines.find(o => o.id === installment.obligation_id);
     return {
       ...installment,
       deadline
     };
   });
+
+  const { sortConfig, handleSort, sortData } = useSorting<EnrichedInstallment>('due_date');
 
   const filteredInstallments = useMemo(() => {
     const filtered = enrichedInstallments.filter((installment) => {
@@ -118,6 +119,10 @@ export default function Installments() {
     completed: installments.filter(i => i.status === "paid" || i.status === "completed").length,
     overdue: installments.filter(i => i.status === "overdue").length,
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

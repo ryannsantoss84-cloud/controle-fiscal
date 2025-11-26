@@ -243,7 +243,7 @@ function isHoliday(date: Date): boolean {
 }
 
 function adjustForWeekendAndHolidays(date: Date, handling: string): string {
-  let adjustedDate = new Date(date);
+  const adjustedDate = new Date(date);
 
   // Helper to check if a date is weekend or holiday
   const isWeekendOrHoliday = (d: Date) => {
