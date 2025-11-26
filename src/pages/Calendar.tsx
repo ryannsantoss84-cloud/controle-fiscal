@@ -304,6 +304,39 @@ export default function Calendar() {
             </Card>
           </div>
         </div>
+
+        {/* Legenda */}
+        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground bg-card/50 p-3 rounded-lg border border-border/50 shadow-sm">
+          <span className="font-semibold mr-2">Legenda:</span>
+
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span>Obrigação</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span>Imposto</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+            <span>Parcelamento</span>
+          </div>
+
+          <div className="w-px h-4 bg-border mx-2 hidden sm:block" />
+
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30" />
+            <span>Concluído</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/30" />
+            <span>Atrasado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-blue-500/20 border border-blue-500/30" />
+            <span>Pendente</span>
+          </div>
+        </div>
       </div>
 
       {/* Grid do Calendário */}
@@ -323,14 +356,15 @@ export default function Calendar() {
                 const dayItems = itemsByDate[dateKey] || [];
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isTodayDate = isToday(day);
+                const isWeekend = getDay(day) === 0 || getDay(day) === 6;
 
                 return (
                   <div
                     key={dayIndex}
                     className={`
                       min-h-[120px] p-2 border-r border-b transition-colors relative group
-                      ${!isCurrentMonth ? "bg-muted/10 text-muted-foreground" : "bg-background"}
-                      ${isTodayDate ? "bg-primary/5" : ""}
+                      ${!isCurrentMonth ? "bg-muted/40 opacity-50" : isWeekend ? "bg-muted/10" : "bg-background"}
+                      ${isTodayDate ? "bg-primary/5 ring-1 ring-inset ring-primary/20" : ""}
                       hover:bg-muted/20 cursor-pointer
                     `}
                     onClick={() => handleDayClick(day, dayItems)}
@@ -364,7 +398,7 @@ export default function Calendar() {
                           title={item.displayTitle}
                         >
                           <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.type === 'tax' ? 'bg-red-500' :
-                              item.type === 'installment' ? 'bg-purple-500' : 'bg-blue-500'
+                            item.type === 'installment' ? 'bg-purple-500' : 'bg-blue-500'
                             }`} />
                           {item.displayTitle}
                         </div>
@@ -470,7 +504,7 @@ export default function Calendar() {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${item.type === 'tax' ? 'bg-red-500' :
-                          item.type === 'installment' ? 'bg-purple-500' : 'bg-blue-500'
+                        item.type === 'installment' ? 'bg-purple-500' : 'bg-blue-500'
                         }`} />
                       <span className="font-medium text-sm">{item.displayTitle}</span>
                     </div>
