@@ -10,7 +10,7 @@ export interface Notification {
     type: "warning" | "danger" | "info";
     date: string;
     itemId: string;
-    itemType: "deadline" | "installment";
+    itemType: "tax" | "obligation" | "installment";
 }
 
 export function useNotifications() {
@@ -30,6 +30,7 @@ export function useNotifications() {
 
             const dueDate = parseISO(deadline.due_date);
             const daysUntil = differenceInDays(dueDate, today);
+            const itemType = deadline.type === "tax" ? "tax" : "obligation";
 
             if (daysUntil < 0) {
                 newNotifications.push({
@@ -39,7 +40,7 @@ export function useNotifications() {
                     type: "danger",
                     date: deadline.due_date,
                     itemId: deadline.id,
-                    itemType: "deadline",
+                    itemType: itemType,
                 });
             } else if (daysUntil === 0) {
                 newNotifications.push({
@@ -49,7 +50,7 @@ export function useNotifications() {
                     type: "danger",
                     date: deadline.due_date,
                     itemId: deadline.id,
-                    itemType: "deadline",
+                    itemType: itemType,
                 });
             } else if (daysUntil <= notificationDays) {
                 newNotifications.push({
@@ -59,7 +60,7 @@ export function useNotifications() {
                     type: "warning",
                     date: deadline.due_date,
                     itemId: deadline.id,
-                    itemType: "deadline",
+                    itemType: itemType,
                 });
             }
         });

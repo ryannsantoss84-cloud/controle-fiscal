@@ -30,8 +30,10 @@ export function NotificationBell() {
   };
 
   const handleNotificationClick = (itemType: string) => {
-    if (itemType === "deadline") {
-      navigate("/deadlines");
+    if (itemType === "tax") {
+      navigate("/taxes");
+    } else if (itemType === "obligation") {
+      navigate("/obligations");
     } else {
       navigate("/installments");
     }
