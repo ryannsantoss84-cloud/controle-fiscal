@@ -8,25 +8,40 @@ import { ptBR } from "date-fns/locale";
 
 interface ClientReportButtonProps {
     client: Client;
-    obligations: any[]; // Using any[] for now, ideally should be Obligation[]
+    obligations: any[];
 }
 
 export function ClientReportButton({ client, obligations }: ClientReportButtonProps) {
     const generatePDF = () => {
         const doc = new jsPDF();
 
-        // Header
-        doc.setFontSize(22);
-        doc.setTextColor(40, 40, 40);
-        doc.text("Relatório Fiscal do Cliente", 14, 20);
+        // Header Background
+        doc.setFillColor(63, 81, 181); // Primary Color
+        doc.rect(0, 0, 210, 40, 'F');
 
-        // Client Info
-        doc.setFontSize(12);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Cliente: ${client.name}`, 14, 35);
-        doc.text(`CNPJ/CPF: ${client.cnpj || "N/A"}`, 14, 42);
-        doc.text(`Email: ${client.email || "N/A"}`, 14, 49);
-        doc.text(`Data do Relatório: ${format(new Date(), "dd/MM/yyyy", { locale: ptBR })}`, 14, 56);
+        // Title
+        doc.setFontSize(24);
+        doc.setTextColor(255, 255, 255);
+        doc.text("Relatório Fiscal", 14, 25);
+
+        // Date in Header
+        doc.setFontSize(10);
+        doc.text(format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }), 196, 25, { align: 'right' });
+
+        // Client Info Card
+        doc.setDrawColor(220, 220, 220);
+        doc.setFillColor(250, 250, 250);
+        doc.roundedRect(14, 50, 182, 35, 3, 3, 'FD');
+
+        doc.setFontSize(14);
+        doc.setTextColor(63, 81, 181);
+        doc.text(client.name, 20, 62);
+
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`CNPJ/CPF: ${client.cnpj || "N/A"}`, 20, 70);
+        doc.text(`Email: ${client.email || "N/A"}`, 20, 76);
+        doc.text(`Regime: ${client.tax_regime ? client.tax_regime.replace('_', ' ').toUpperCase() : "N/A"}`, 100, 70);
 
         // Summary Stats
         const total = obligations.length;
@@ -34,20 +49,27 @@ export function ClientReportButton({ client, obligations }: ClientReportButtonPr
         const completed = obligations.filter(o => o.status === 'completed' || o.status === 'paid').length;
         const overdue = obligations.filter(o => o.status === 'overdue').length;
 
-        doc.setDrawColor(200, 200, 200);
-        doc.line(14, 65, 196, 65);
+        // Stats Row
+        const startY = 95;
+        const boxWidth = 40;
+        const boxHeight = 20;
+        const gap = 10;
 
-        doc.setFontSize(14);
-        doc.setTextColor(40, 40, 40);
-        doc.text("Resumo", 14, 75);
+        // Helper for Stats Box
+        const drawStatBox = (x: number, label: string, value: number, color: [number, number, number]) => {
+            doc.setFillColor(...color);
+            doc.roundedRect(x, startY, boxWidth, boxHeight, 2, 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.text(value.toString(), x + boxWidth / 2, startY + 12, { align: 'center' });
+            doc.setFontSize(8);
+            doc.text(label, x + boxWidth / 2, startY + 17, { align: 'center' });
+        };
 
-        doc.setFontSize(10);
-        doc.text(`Total de Obrigações: ${total}`, 14, 85);
-        doc.text(`Pendentes: ${pending}`, 60, 85);
-        doc.text(`Concluídas: ${completed}`, 100, 85);
-        doc.setTextColor(220, 53, 69); // Red for overdue
-        doc.text(`Atrasadas: ${overdue}`, 140, 85);
-        doc.setTextColor(100, 100, 100); // Reset color
+        drawStatBox(14, "TOTAL", total, [100, 116, 139]); // Slate
+        drawStatBox(14 + boxWidth + gap, "PENDENTES", pending, [245, 158, 11]); // Amber
+        drawStatBox(14 + (boxWidth + gap) * 2, "CONCLUÍDAS", completed, [16, 185, 129]); // Emerald
+        drawStatBox(14 + (boxWidth + gap) * 3, "ATRASADAS", overdue, [239, 68, 68]); // Red
 
         // Table
         const tableData = obligations.map(item => [
@@ -56,18 +78,29 @@ export function ClientReportButton({ client, obligations }: ClientReportButtonPr
             item.status === 'completed' ? 'Concluído' :
                 item.status === 'paid' ? 'Pago' :
                     item.status === 'overdue' ? 'Atrasado' :
-                        item.status === 'in_progress' ? 'Em Andamento' : 'Pendente',
-            item.amount ? `R$ ${Number(item.amount).toFixed(2)}` : '-'
+                        item.status === 'in_progress' ? 'Em Andamento' : 'Pendente'
         ]);
 
         autoTable(doc, {
-            startY: 95,
-            head: [['Obrigação', 'Vencimento', 'Status', 'Valor']],
+            startY: 125,
+            head: [['Obrigação', 'Vencimento', 'Status']],
             body: tableData,
             theme: 'grid',
-            headStyles: { fillColor: [63, 81, 181] },
-            styles: { fontSize: 9 },
-            alternateRowStyles: { fillColor: [245, 245, 245] }
+            headStyles: {
+                fillColor: [63, 81, 181],
+                fontSize: 10,
+                halign: 'center'
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+            },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { cellWidth: 40, halign: 'center' },
+                2: { cellWidth: 40, halign: 'center' }
+            },
+            alternateRowStyles: { fillColor: [248, 250, 252] }
         });
 
         // Footer
@@ -75,7 +108,8 @@ export function ClientReportButton({ client, obligations }: ClientReportButtonPr
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
-            doc.text(`Página ${i} de ${pageCount}`, 196, 285, { align: 'right' });
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Gerado por Control Fiscal - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
         }
 
         doc.save(`relatorio_${client.name.replace(/\s+/g, '_').toLowerCase()}_${format(new Date(), "yyyyMMdd")}.pdf`);
