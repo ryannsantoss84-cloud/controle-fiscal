@@ -42,9 +42,8 @@ const formSchema = z.object({
   due_date: z.string().min(1, "Data de vencimento é obrigatória"),
   status: z.enum(["pending", "in_progress", "completed", "overdue"]),
   recurrence: z.enum(["none", "monthly", "quarterly", "semiannual", "annual"]),
-  notes: z.string().optional(),
-  responsible: z.string().optional(),
-  weekend_handling: z.enum(["advance", "postpone", "next_business_day"]),
+  sphere: z.enum(["federal", "state", "municipal"]).optional(),
+  reference_date: z.string().optional(),
 });
 
 interface DeadlineEditFormProps {
@@ -76,6 +75,8 @@ export function DeadlineEditForm({
       notes: deadline.notes || "",
       responsible: deadline.responsible || "",
       weekend_handling: (deadline.weekend_handling as "advance" | "postpone" | "next_business_day") || "next_business_day",
+      sphere: deadline.sphere as "federal" | "state" | "municipal" | undefined,
+      reference_date: deadline.reference_date ? deadline.reference_date.slice(0, 7) : "",
     },
   });
 
@@ -92,6 +93,8 @@ export function DeadlineEditForm({
         notes: deadline.notes || "",
         responsible: deadline.responsible || "",
         weekend_handling: (deadline.weekend_handling as "advance" | "postpone" | "next_business_day") || "next_business_day",
+        sphere: deadline.sphere as "federal" | "state" | "municipal" | undefined,
+        reference_date: deadline.reference_date ? deadline.reference_date.slice(0, 7) : "",
       });
     }
   }, [open, deadline, form]);
@@ -123,6 +126,7 @@ export function DeadlineEditForm({
       ...values,
       due_date: adjustedDueDate,
       original_due_date: originalDueDate,
+      reference_date: values.reference_date ? `${values.reference_date}-01` : null,
       completed_at:
         values.status === "completed" ? new Date().toISOString() : undefined,
     });
@@ -149,30 +153,58 @@ export function DeadlineEditForm({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="obligation">Obrigação</SelectItem>
-                      <SelectItem value="tax">Imposto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="obligation">Obrigação</SelectItem>
+                        <SelectItem value="tax">Imposto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="sphere"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Esfera</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a esfera" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="federal">Federal</SelectItem>
+                        <SelectItem value="state">Estadual</SelectItem>
+                        <SelectItem value="municipal">Municipal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="title"
@@ -246,31 +278,45 @@ export function DeadlineEditForm({
 
               <FormField
                 control={form.control}
-                name="status"
+                name="reference_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="in_progress">Em Andamento</SelectItem>
-                        <SelectItem value="completed">Concluída</SelectItem>
-                        <SelectItem value="overdue">Atrasada</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Mês de Referência</FormLabel>
+                    <FormControl>
+                      <Input type="month" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="completed">Concluída</SelectItem>
+                      <SelectItem value="overdue">Atrasada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {dueDateIsWeekend && (
               <Alert>
