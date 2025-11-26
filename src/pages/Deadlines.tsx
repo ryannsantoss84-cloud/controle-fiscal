@@ -38,30 +38,30 @@ export default function Deadlines() {
   const [searchTerm, setSearchTerm] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [referenceMonth, setReferenceMonth] = useState<Date | undefined>(undefined);
   const [isGenerating, setIsGenerating] = useState(false);
   const [targetDate, setTargetDate] = useState<Date>(new Date());
   const [page, setPage] = useState(1);
   const itemsPerPage = 12;
 
-  const { deadlines, deleteDeadline, updateDeadline } = useDeadlines();
+  const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
+    page,
+    pageSize: itemsPerPage,
+    searchTerm,
+    clientFilter,
+    statusFilter,
+    referenceMonthFilter: referenceMonth
+  });
   const { clients } = useClients({ pageSize: 1000 });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
 
   // Filtragem
+  // Filtragem agora é server-side, mas mantemos a ordenação client-side por enquanto
   const filteredDeadlines = useMemo(() => {
-    const filtered = deadlines.filter((deadline) => {
-      const matchesSearch = deadline.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        deadline.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesClient = clientFilter === "all" || deadline.client_id === clientFilter;
-      const matchesStatus = statusFilter === "all" || deadline.status === statusFilter;
-
-      return matchesSearch && matchesClient && matchesStatus;
-    });
-
-    return sortData(filtered);
-  }, [deadlines, searchTerm, clientFilter, statusFilter, sortData]);
+    return sortData(deadlines);
+  }, [deadlines, sortData]);
 
   // Bulk Actions Hook
   const {

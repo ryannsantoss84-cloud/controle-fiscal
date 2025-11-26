@@ -37,6 +37,7 @@ interface UseDeadlinesOptions {
   typeFilter?: string;
   clientFilter?: string;
   monthFilter?: Date;
+  referenceMonthFilter?: Date;
 }
 
 export function useDeadlines(options: UseDeadlinesOptions = {}) {
@@ -47,14 +48,15 @@ export function useDeadlines(options: UseDeadlinesOptions = {}) {
     statusFilter = "all",
     typeFilter = "all",
     clientFilter = "all",
-    monthFilter
+    monthFilter,
+    referenceMonthFilter
   } = options;
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["deadlines", page, pageSize, searchTerm, statusFilter, typeFilter, clientFilter, monthFilter],
+    queryKey: ["deadlines", page, pageSize, searchTerm, statusFilter, typeFilter, clientFilter, monthFilter, referenceMonthFilter],
     queryFn: async () => {
       let query = supabase
         .from("obligations")
@@ -87,6 +89,22 @@ export function useDeadlines(options: UseDeadlinesOptions = {}) {
         const start = new Date(monthFilter.getFullYear(), monthFilter.getMonth(), 1).toISOString();
         const end = new Date(monthFilter.getFullYear(), monthFilter.getMonth() + 1, 0).toISOString();
         query = query.gte("due_date", start).lte("due_date", end);
+      }
+
+      if (referenceMonthFilter) {
+        // Formato YYYY-MM para comparar com reference_date (que é string YYYY-MM-DD ou YYYY-MM)
+        // Mas no banco parece ser DATE ou TEXT. O código anterior usava slice(0, 7)
+        // Vamos assumir que reference_date é YYYY-MM-DD.
+        // O filtro deve pegar tudo que começa com YYYY-MM
+        const year = referenceMonthFilter.getFullYear();
+        const month = String(referenceMonthFilter.getMonth() + 1).padStart(2, '0');
+        const searchString = `${year}-${month}`;
+
+        // Se reference_date for DATE, podemos usar gte/lte com o primeiro e ultimo dia do mes
+        const start = `${searchString}-01`;
+        const end = new Date(year, referenceMonthFilter.getMonth() + 1, 0).toISOString().split('T')[0];
+
+        query = query.gte("reference_date", start).lte("reference_date", end);
       }
 
       // Ordenação
