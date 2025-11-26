@@ -19,20 +19,22 @@ import { useSorting } from "@/hooks/useSorting";
 import { Deadline } from "@/hooks/useDeadlines";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { MonthPicker } from "@/components/ui/month-picker";
+import { User, CheckCircle2, Search } from "lucide-react";
 
 export default function Obligations() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchTerm, setSearchTerm] = useState("");
     const [clientFilter, setClientFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
-    const [monthFilter, setMonthFilter] = useState<string>(""); // YYYY-MM format
+    const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
     const [page, setPage] = useState(1);
     const itemsPerPage = 12;
 
     // Filter by type = 'obligation'
     const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
         typeFilter: 'obligation',
-        monthFilter: monthFilter ? new Date(monthFilter + "-02") : undefined
+        monthFilter
     });
     const { clients } = useClients();
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
@@ -118,21 +120,27 @@ export default function Obligations() {
             />
 
             <FilterBar viewMode={viewMode} onViewModeChange={setViewMode}>
-                <Input
-                    placeholder="Buscar por título..."
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                    className="flex-1"
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar por título..."
+                        value={searchTerm}
+                        onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                        className="pl-9"
+                    />
+                </div>
+
+                <MonthPicker
+                    date={monthFilter}
+                    setDate={(date) => { setMonthFilter(date); setPage(1); }}
                 />
-                <Input
-                    type="month"
-                    value={monthFilter}
-                    onChange={(e) => { setMonthFilter(e.target.value); setPage(1); }}
-                    className="w-[180px]"
-                />
+
                 <Select value={clientFilter} onValueChange={(v) => { setClientFilter(v); setPage(1); }}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue placeholder="Cliente" />
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                        <div className="flex items-center gap-2 truncate">
+                            <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <SelectValue placeholder="Cliente" />
+                        </div>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos os clientes</SelectItem>
@@ -141,9 +149,13 @@ export default function Obligations() {
                         ))}
                     </SelectContent>
                 </Select>
+
                 <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-                    <SelectTrigger className="w-[140px]">
-                        <SelectValue placeholder="Status" />
+                    <SelectTrigger className="w-[160px]">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Status" />
+                        </div>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos</SelectItem>

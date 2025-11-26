@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Calendar, Receipt, Pencil, Trash2, Loader2, Eye, Search } from "lucide-react";
+import { FileText, Plus, Calendar, Receipt, Pencil, Trash2, Loader2, Eye, Search, Filter, Repeat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTemplates, type Template } from "@/hooks/useTemplates";
 import { TemplateForm } from "@/components/templates/TemplateForm";
@@ -131,7 +131,10 @@ export default function Templates() {
                 </div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Tipo" />
+                        <div className="flex items-center gap-2">
+                            <Filter className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Tipo" />
+                        </div>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos os tipos</SelectItem>
@@ -141,7 +144,10 @@ export default function Templates() {
                 </Select>
                 <Select value={recurrenceFilter} onValueChange={setRecurrenceFilter}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Recorrência" />
+                        <div className="flex items-center gap-2">
+                            <Repeat className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Recorrência" />
+                        </div>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todas as recorrências</SelectItem>
