@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate } from "@/lib/utils";
-import { Calendar, DollarSign, FileText } from "lucide-react";
+import { Calendar, FileText } from "lucide-react";
 import { SortableColumn } from "@/components/shared/SortableColumn";
 import { SortDirection } from "@/hooks/useSorting";
 
@@ -99,15 +99,6 @@ export function InstallmentTable({
                         </TableHead>
                         <TableHead>
                             <SortableColumn
-                                label="Valor"
-                                sortKey="amount"
-                                currentSortKey={sortConfig.key}
-                                currentSortDirection={sortConfig.direction}
-                                onSort={onSort}
-                            />
-                        </TableHead>
-                        <TableHead>
-                            <SortableColumn
                                 label="Status"
                                 sortKey="status"
                                 currentSortKey={sortConfig.key}
@@ -120,7 +111,7 @@ export function InstallmentTable({
                 <TableBody>
                     {installments.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
+                            <TableCell colSpan={5} className="h-24 text-center">
                                 Nenhuma parcela encontrada.
                             </TableCell>
                         </TableRow>
@@ -165,12 +156,6 @@ export function InstallmentTable({
                                                 <span>{formatDate(installment.due_date)}</span>
                                             </div>
                                         )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2 text-sm font-medium">
-                                            <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                            {installment.amount ? `R$ ${installment.amount.toFixed(2)}` : "-"}
-                                        </div>
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={config.variant} className="font-normal">
