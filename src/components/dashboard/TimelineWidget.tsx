@@ -6,6 +6,7 @@ import { format, addDays, isAfter, isBefore, startOfDay, differenceInDays } from
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
 
 interface TimelineItem {
     id: string;
@@ -25,6 +26,12 @@ type TimelinePeriod = "7" | "15" | "30";
 
 export function TimelineWidget({ items }: TimelineWidgetProps) {
     const [period, setPeriod] = useState<TimelinePeriod>("7");
+    const navigate = useNavigate();
+
+    const handleItemClick = (itemId: string) => {
+        // Redireciona para a página de obligations (pode ser /deadlines ou /obligations dependendo do tipo)
+        navigate('/obligations');
+    };
 
     const filteredItems = useMemo(() => {
         const today = startOfDay(new Date());
@@ -152,10 +159,11 @@ export function TimelineWidget({ items }: TimelineWidgetProps) {
                                         {dateItems.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50"
+                                                onClick={() => handleItemClick(item.id)}
+                                                className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-primary/10 hover:border-primary/30 transition-all cursor-pointer border border-border/50 group"
                                             >
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-medium text-sm truncate">{item.title}</div>
+                                                    <div className="font-medium text-sm truncate group-hover:text-primary transition-colors">{item.title}</div>
                                                     {item.client_name && (
                                                         <div className="text-xs text-muted-foreground">{item.client_name}</div>
                                                     )}
