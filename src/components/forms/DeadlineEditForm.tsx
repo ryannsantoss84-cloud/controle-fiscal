@@ -44,6 +44,9 @@ const formSchema = z.object({
   recurrence: z.enum(["none", "monthly", "quarterly", "semiannual", "annual"]),
   sphere: z.enum(["federal", "state", "municipal"]).optional(),
   reference_date: z.string().optional(),
+  weekend_handling: z.enum(["advance", "postpone", "next_business_day"]),
+  notes: z.string().optional(),
+  responsible: z.string().optional(),
 });
 
 interface DeadlineEditFormProps {
