@@ -44,6 +44,7 @@ const formSchema = z.object({
   installment_number: z.coerce.number().min(1).default(1),
   total_installments: z.coerce.number().min(1).default(1),
   weekend_rule: z.enum(["postpone", "anticipate", "keep"]).default("postpone"),
+  sphere: z.enum(["federal", "state", "municipal"]).optional(),
 });
 
 interface InstallmentFormProps {
@@ -71,6 +72,7 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
       installment_number: 1,
       total_installments: 1,
       weekend_rule: "postpone",
+      sphere: undefined,
     },
   });
 
@@ -235,6 +237,29 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
                           {client.name}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="sphere"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Esfera</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a esfera" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="federal">Federal</SelectItem>
+                      <SelectItem value="state">Estadual</SelectItem>
+                      <SelectItem value="municipal">Municipal</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
