@@ -28,7 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useClients } from "@/hooks/useClients";
-import { format, isWeekend } from "date-fns";
+import { format } from "date-fns";
+import { isWeekend, getWeekendOrHolidayMessage } from "@/lib/weekendUtils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -244,7 +245,7 @@ export function InstallmentEditForm({ installment, open, onOpenChange, onSuccess
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              A data selecionada cai em um final de semana.
+              {getWeekendOrHolidayMessage(selectedDate)}
               {weekendHandling === "advance" && " Será ajustada para a sexta-feira anterior."}
               {weekendHandling === "postpone" && " Será ajustada para a segunda-feira seguinte."}
               {weekendHandling === "next_business_day" && " Será ajustada para o próximo dia útil."}

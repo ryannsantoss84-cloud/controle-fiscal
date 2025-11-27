@@ -31,7 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { adjustDueDateForWeekend, isWeekend } from "@/lib/weekendUtils";
+import { adjustDueDateForWeekend, isWeekend, getWeekendOrHolidayMessage } from "@/lib/weekendUtils";
 import { format, parseISO } from "date-fns";
 
 const formSchema = z.object({
@@ -323,7 +323,7 @@ export function DeadlineEditForm({
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Esta data cai em um final de semana.
+                  {getWeekendOrHolidayMessage(parseISO(watchedDueDate))}
                   {adjustedDate && (
                     <span className="font-semibold">
                       {" "}

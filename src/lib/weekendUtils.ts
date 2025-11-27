@@ -82,3 +82,44 @@ export function getWeekdayName(date: Date): string {
   const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   return days[getDay(date)];
 }
+
+/**
+ * Verifica se uma data é sábado ou domingo (final de semana real)
+ */
+export function isActualWeekend(date: Date): boolean {
+  const day = getDay(date);
+  return day === 0 || day === 6; // 0 = domingo, 6 = sábado
+}
+
+/**
+ * Retorna o tipo de não-dia-útil (final de semana, feriado, ou ambos)
+ */
+export function getWeekendOrHolidayType(date: Date): 'weekend' | 'holiday' | 'both' | null {
+  const isWeekendDay = isActualWeekend(date);
+  const isHolidayDay = isHoliday(date);
+
+  if (isWeekendDay && isHolidayDay) return 'both';
+  if (isWeekendDay) return 'weekend';
+  if (isHolidayDay) return 'holiday';
+  return null;
+}
+
+/**
+ * Retorna uma mensagem apropriada para datas que caem em finais de semana ou feriados
+ */
+export function getWeekendOrHolidayMessage(date: Date): string | null {
+  const type = getWeekendOrHolidayType(date);
+  
+  if (!type) return null;
+
+  switch (type) {
+    case 'weekend':
+      return `Esta data cai em um final de semana (${getWeekdayName(date)}).`;
+    case 'holiday':
+      return 'Esta data é um feriado.';
+    case 'both':
+      return `Esta data é um feriado e também cai em um final de semana (${getWeekdayName(date)}).`;
+    default:
+      return null;
+  }
+}

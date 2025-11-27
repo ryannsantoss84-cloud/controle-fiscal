@@ -25,7 +25,7 @@ import { useDeadlines } from "@/hooks/useDeadlines";
 import { useClients } from "@/hooks/useClients";
 import { useInstallments } from "@/hooks/useInstallments";
 import { addMonths, format } from "date-fns";
-import { adjustDueDateForWeekend, isWeekend } from "@/lib/weekendUtils";
+import { adjustDueDateForWeekend, isWeekend, getWeekendOrHolidayMessage } from "@/lib/weekendUtils";
 import { FiscalIntelligence, RecurrenceType } from "@/lib/fiscalUtils";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -552,7 +552,7 @@ export function DeadlineForm() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Esta data cai em um final de semana.
+                  {getWeekendOrHolidayMessage(watchedDueDate)}
                   {adjustedDate && (
                     <span className="font-semibold">
                       {" "}
