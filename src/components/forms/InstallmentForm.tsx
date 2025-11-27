@@ -34,6 +34,8 @@ import { useClients } from "@/hooks/useClients";
 import { checkInstallmentDuplication, InstallmentDuplicationCheck } from "@/lib/installmentDuplicationValidator";
 import { DuplicationAlert } from "@/components/shared/DuplicationAlert";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmLargeInstallmentDialog } from "@/components/shared/ConfirmLargeInstallmentDialog";
+import { ProgressDialog } from "@/components/shared/ProgressDialog";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome/Título é obrigatório"),
@@ -41,10 +43,17 @@ const formSchema = z.object({
   protocol: z.string().optional(),
   due_date: z.string().min(1, "Data de vencimento é obrigatória"),
   status: z.enum(["pending", "paid", "overdue"]),
-  installment_number: z.coerce.number().min(1).default(1),
-  total_installments: z.coerce.number().min(1).default(1),
+  installment_number: z.coerce.number()
+    .min(1, "Número da parcela deve ser no mínimo 1")
+    .max(200, "Número da parcela não pode exceder 200"),
+  total_installments: z.coerce.number()
+    .min(1, "Total de parcelas deve ser no mínimo 1")
+    .max(200, "Máximo de 200 parcelas permitido"),
   weekend_rule: z.enum(["postpone", "anticipate", "keep"]).default("postpone"),
   sphere: z.enum(["federal", "state", "municipal"]).optional(),
+}).refine((data) => data.installment_number <= data.total_installments, {
+  message: "Número da parcela não pode ser maior que o total",
+  path: ["installment_number"],
 });
 
 interface InstallmentFormProps {
@@ -59,6 +68,16 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
   const { toast } = useToast();
   const [duplicationCheck, setDuplicationCheck] = useState<InstallmentDuplicationCheck | null>(null);
   const [pendingSubmission, setPendingSubmission] = useState<z.infer<typeof formSchema> | null>(null);
+
+  // Batch processing states
+  const [isCreating, setIsCreating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [totalToCreate, setTotalToCreate] = useState(0);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.infer<typeof formSchema> | null>(null);
+
+  const BATCH_SIZE = 10; // Criar 10 parcelas por vez
+  const LARGE_BATCH_THRESHOLD = 50; // Confirmar se > 50
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange || setInternalOpen;
@@ -83,68 +102,114 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
     return "next_business_day";
   };
 
-  const performSubmission = async (values: z.infer<typeof formSchema>) => {
-    // Criar a parcela principal
-    await createInstallment.mutateAsync({
-      name: values.name,
-      client_id: values.client_id,
-      amount: 0,
-      due_date: values.due_date,
-      status: values.status,
-      installment_number: values.installment_number,
-      total_installments: values.total_installments,
-      obligation_id: null,
-      // @ts-ignore
-      protocol: values.protocol,
-    });
+  const performSubmission = async (values: z.infer<typeof formSchema>, skipConfirm = false) => {
+    const remainingCount = values.total_installments - values.installment_number;
+    const totalToCreate = remainingCount + 1; // +1 para a parcela principal
 
-    // Se não for a última parcela, gerar as restantes automaticamente
-    if (values.installment_number < values.total_installments) {
-      const remainingCount = values.total_installments - values.installment_number;
+    // Se for grande volume e não pulou confirmação, pedir confirmação
+    if (remainingCount > LARGE_BATCH_THRESHOLD && !skipConfirm) {
+      setPendingValues(values);
+      setTotalToCreate(totalToCreate);
+      setShowConfirm(true);
+      return;
+    }
 
-      for (let i = 1; i <= remainingCount; i++) {
-        const nextNumber = values.installment_number + i;
+    setIsCreating(true);
+    setProgress(0);
+    setTotalToCreate(totalToCreate);
 
-        // Calcular data base (adicionar meses à data da parcela atual)
-        const baseDate = addMonths(parseISO(values.due_date), i);
+    try {
+      // Criar a parcela principal
+      await createInstallment.mutateAsync({
+        name: values.name,
+        client_id: values.client_id,
+        amount: 0,
+        due_date: values.due_date,
+        status: values.status,
+        installment_number: values.installment_number,
+        total_installments: values.total_installments,
+        obligation_id: null,
+        // @ts-ignore
+        protocol: values.protocol,
+        // @ts-ignore
+        sphere: values.sphere,
+      });
 
-        // Aplicar regras de final de semana/feriado
-        const adjustedDate = isWeekend(baseDate)
-          ? adjustDueDateForWeekend(baseDate, convertWeekendRule(values.weekend_rule))
-          : baseDate;
+      setProgress(1);
 
-        const originalDate = isWeekend(baseDate)
-          ? format(baseDate, "yyyy-MM-dd")
-          : null;
+      // Gerar parcelas restantes em lotes
+      if (remainingCount > 0) {
+        const batches = Math.ceil(remainingCount / BATCH_SIZE);
 
-        await createInstallment.mutateAsync({
-          name: values.name,
-          client_id: values.client_id,
-          amount: 0,
-          due_date: format(adjustedDate, "yyyy-MM-dd"),
-          original_due_date: originalDate,
-          status: "pending",
-          installment_number: nextNumber,
-          total_installments: values.total_installments,
-          obligation_id: null,
-          // @ts-ignore
-          protocol: values.protocol,
-        });
+        for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+          const batchStart = batchIndex * BATCH_SIZE + 1;
+          const batchEnd = Math.min((batchIndex + 1) * BATCH_SIZE, remainingCount);
+
+          // Criar parcelas do lote atual em paralelo
+          const batchPromises = [];
+          for (let i = batchStart; i <= batchEnd; i++) {
+            const nextNumber = values.installment_number + i;
+            const baseDate = addMonths(parseISO(values.due_date), i);
+            const adjustedDate = isWeekend(baseDate)
+              ? adjustDueDateForWeekend(baseDate, convertWeekendRule(values.weekend_rule))
+              : baseDate;
+            const originalDate = isWeekend(baseDate) ? format(baseDate, "yyyy-MM-dd") : null;
+
+            batchPromises.push(
+              createInstallment.mutateAsync({
+                name: values.name,
+                client_id: values.client_id,
+                amount: 0,
+                due_date: format(adjustedDate, "yyyy-MM-dd"),
+                original_due_date: originalDate,
+                status: "pending",
+                installment_number: nextNumber,
+                total_installments: values.total_installments,
+                obligation_id: null,
+                // @ts-ignore
+                protocol: values.protocol,
+                // @ts-ignore
+                sphere: values.sphere,
+              })
+            );
+          }
+
+          // Aguardar lote completar
+          await Promise.all(batchPromises);
+
+          // Atualizar progresso
+          setProgress(batchEnd + 1);
+
+          // Pequeno delay entre lotes para não sobrecarregar
+          if (batchIndex < batches - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
       }
 
       toast({
         title: "Sucesso!",
-        description: `Parcela ${values.installment_number}/${values.total_installments} e mais ${remainingCount} ${remainingCount === 1 ? 'parcela criada' : 'parcelas criadas'} automaticamente!`,
+        description: remainingCount > 0
+          ? `${totalToCreate} parcelas criadas com sucesso!`
+          : "Parcela criada com sucesso.",
       });
-    } else {
-      toast({
-        title: "Sucesso!",
-        description: "Parcela criada com sucesso.",
-      });
-    }
 
-    setOpen(false);
-    form.reset();
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error("Erro ao criar parcelas:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar parcelas. Algumas podem ter sido criadas.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+      setProgress(0);
+      setTotalToCreate(0);
+      setShowConfirm(false);
+      setPendingValues(null);
+    }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -187,6 +252,18 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
   const handleDuplicationCancel = () => {
     setDuplicationCheck(null);
     setPendingSubmission(null);
+  };
+
+  const handleConfirmLargeBatch = async () => {
+    if (pendingValues) {
+      await performSubmission(pendingValues, true);
+    }
+  };
+
+  const handleCancelLargeBatch = () => {
+    setShowConfirm(false);
+    setPendingValues(null);
+    setTotalToCreate(0);
   };
 
   return (
@@ -396,6 +473,19 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
           onCancel={handleDuplicationCancel}
         />
       )}
+
+      <ConfirmLargeInstallmentDialog
+        open={showConfirm}
+        count={totalToCreate}
+        onConfirm={handleConfirmLargeBatch}
+        onCancel={handleCancelLargeBatch}
+      />
+
+      <ProgressDialog
+        open={isCreating}
+        progress={progress}
+        total={totalToCreate}
+      />
     </Dialog>
   );
 }
