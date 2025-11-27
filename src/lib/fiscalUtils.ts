@@ -1,16 +1,33 @@
 import { addMonths, startOfMonth, getMonth, format, getQuarter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export type RecurrenceType = "none" | "monthly" | "quarterly" | "semiannual" | "annual";
+export type RecurrenceType =
+    | "none"
+    | "weekly"
+    | "biweekly"
+    | "monthly"
+    | "bimonthly"
+    | "quarterly"
+    | "semiannual"
+    | "annual";
 
 export const FiscalIntelligence = {
     /**
      * Calcula a descrição da competência baseada na data e recorrência.
-     * Ex: Mensal -> "jan/2024"
-     *     Trimestral -> "1º Trim/2024"
+     * Funciona para todos os tipos: semanal, quinzenal, mensal, bimestral, trimestral, semestral e anual
      */
     formatReferenceDate: (date: Date, recurrence: RecurrenceType): string => {
-        if (recurrence === "quarterly") {
+        if (recurrence === "weekly") {
+            return `Semana ${format(date, "ww/yyyy")}`;
+        } else if (recurrence === "biweekly") {
+            const weekNum = parseInt(format(date, "ww"));
+            const period = Math.ceil(weekNum / 2);
+            return `Quinzena ${period}/${format(date, "yyyy")}`;
+        } else if (recurrence === "bimonthly") {
+            const month = getMonth(date);
+            const period = Math.ceil((month + 1) / 2);
+            return `Bimestre ${period}/${format(date, "yyyy")}`;
+        } else if (recurrence === "quarterly") {
             const quarter = getQuarter(date);
             return `${quarter}º Trim/${format(date, "yyyy")}`;
         } else if (recurrence === "semiannual") {
@@ -27,25 +44,31 @@ export const FiscalIntelligence = {
 
     /**
      * Gera as próximas datas de vencimento baseadas na regra de recorrência.
+     * Suporta weekly, biweekly, monthly, bimonthly, quarterly, semiannual e annual
      */
     generateNextOccurrences: (baseDate: Date, recurrence: RecurrenceType, count: number = 12): Date[] => {
         const dates: Date[] = [];
         let currentDate = new Date(baseDate);
 
-        // Se for trimestral, ajusta para o próximo trimestre civil se necessário?
-        // Por enquanto, vamos apenas somar a periodicidade simples.
-
         for (let i = 0; i < count; i++) {
             let increment = 0;
+            let dayIncrement = 0;
+
             switch (recurrence) {
+                case "weekly": dayIncrement = 7; break;
+                case "biweekly": dayIncrement = 14; break;
                 case "monthly": increment = 1; break;
+                case "bimonthly": increment = 2; break;
                 case "quarterly": increment = 3; break;
                 case "semiannual": increment = 6; break;
                 case "annual": increment = 12; break;
                 default: increment = 0;
             }
 
-            if (increment > 0) {
+            if (dayIncrement > 0) {
+                currentDate = new Date(currentDate.getTime() + dayIncrement * 24 * 60 * 60 * 1000);
+                dates.push(new Date(currentDate));
+            } else if (increment > 0) {
                 currentDate = addMonths(currentDate, increment);
                 dates.push(new Date(currentDate));
             }
