@@ -35,7 +35,7 @@ export function QuickActions() {
         {
             label: "Novo Prazo",
             icon: Calendar,
-            onClick: () => navigate("/deadlines"),
+            onClick: () => navigate("/installments"),
             color: "text-orange-600",
             bg: "bg-orange-100",
             border: "border-orange-200"
