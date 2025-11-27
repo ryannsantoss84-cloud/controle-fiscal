@@ -23,15 +23,17 @@ interface UseClientsOptions {
   page?: number;
   pageSize?: number;
   searchTerm?: string;
+  regimeFilter?: string;
+  statusFilter?: string;
 }
 
 export function useClients(options: UseClientsOptions = {}) {
-  const { page = 1, pageSize = 10, searchTerm = "" } = options;
+  const { page = 1, pageSize = 10, searchTerm = "", regimeFilter = "all", statusFilter = "all" } = options;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["clients", page, pageSize, searchTerm],
+    queryKey: ["clients", page, pageSize, searchTerm, regimeFilter, statusFilter],
     queryFn: async () => {
       let query = supabase
         .from("clients")
@@ -40,6 +42,14 @@ export function useClients(options: UseClientsOptions = {}) {
 
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,cnpj.ilike.%${searchTerm}%`);
+      }
+
+      if (regimeFilter && regimeFilter !== "all") {
+        query = query.eq("tax_regime", regimeFilter);
+      }
+
+      if (statusFilter && statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
       }
 
       const from = (page - 1) * pageSize;

@@ -42,21 +42,15 @@ export default function Clients() {
   const { clients, totalCount, isLoading, deleteClient } = useClients({
     page,
     pageSize,
-    searchTerm
+    searchTerm,
+    regimeFilter,
+    statusFilter
   });
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  const filteredClients = sortData(clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.cnpj.includes(searchTerm) ||
-      (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesRegime = regimeFilter === "all" || client.tax_regime === regimeFilter;
-    const matchesStatus = statusFilter === "all" || (client.status || 'active') === statusFilter;
-
-    return matchesSearch && matchesRegime && matchesStatus;
-  }));
+  // Apenas ordenação client-side (os dados já vêm filtrados do servidor)
+  const sortedClients = sortData(clients);
 
   const handleViewDetails = (client: Client) => {
     setSelectedClient(client);
@@ -133,7 +127,7 @@ export default function Clients() {
         </div>
       ) : (
         <>
-          {filteredClients.length === 0 ? (
+          {sortedClients.length === 0 ? (
             <EmptyState
               icon={Users}
               title="Nenhum cliente encontrado"
@@ -144,7 +138,7 @@ export default function Clients() {
             <>
               {viewMode === 'grid' ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredClients.map((client) => (
+                  {sortedClients.map((client) => (
                     <Card key={client.id} className="hover:shadow-md transition-all border-l-4 border-l-transparent hover:border-l-primary group">
                       <CardHeader className="space-y-2 pb-3">
                         <div className="flex justify-between items-start">
@@ -241,7 +235,7 @@ export default function Clients() {
                     <div className="text-right">Ações</div>
                   </div>
                   <div className="divide-y">
-                    {filteredClients.map((client) => (
+                    {sortedClients.map((client) => (
                       <div key={client.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr_auto] gap-4 p-4 items-center hover:bg-muted/5 transition-colors">
                         <div>
                           <div className="font-medium text-sm">{client.name}</div>
