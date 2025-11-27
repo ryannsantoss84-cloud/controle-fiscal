@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings as SettingsIcon, Save, Moon, Sun, Building } from "lucide-react";
 import { useTheme } from "next-themes";
+import { NotificationSettings } from "@/components/notifications/NotificationSettings";
 
 interface SettingsData {
     office_name: string | null;
@@ -205,6 +206,9 @@ export default function Settings() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* NOTIFICAÇÕES */}
+            <NotificationSettings />
 
             <div className="flex justify-end pt-4">
                 <Button onClick={handleSave} disabled={saving} className="min-w-[150px] gap-2">
