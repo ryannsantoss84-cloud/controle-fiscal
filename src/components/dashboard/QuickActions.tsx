@@ -33,7 +33,7 @@ export function QuickActions() {
             border: "border-green-200"
         },
         {
-            label: "Novo Prazo",
+            label: "Parcelamento",
             icon: Calendar,
             onClick: () => navigate("/installments"),
             color: "text-orange-600",
