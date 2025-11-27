@@ -82,64 +82,6 @@
    Lighter borders and better contrast for dark mode
    ============================================================================ */
 .dark {
-  --border: 217.2 32.6% 25%;
-  /* Lighter border for better visibility */
-  --input: 217.2 32.6% 25%;
-  /* Lighter input border */
-}
-
-/* ============================================================================
-   ANIMAÇÕES CORPORATIVAS SUAVES
-   ============================================================================ */
-.animate-in {
-  animation: animateIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes animateIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ============================================================================
-   GLASSMORPHISM CORPORATIVO
-   ============================================================================ */
 .glass-card {
   @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl;
 }
