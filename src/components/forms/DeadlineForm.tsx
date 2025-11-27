@@ -156,16 +156,26 @@ export function DeadlineForm() {
         ) {
           const totalInstallments = parseInt(values.installment_count);
           for (let i = 1; i <= totalInstallments; i++) {
-            const installmentDueDate = format(
-              addMonths(dueDate, i - 1),
-              "yyyy-MM-dd"
-            );
+            // Calcular data base da parcela (adicionar meses à data original)
+            const baseInstallmentDate = addMonths(dueDate, i - 1);
+
+            // Aplicar regras de final de semana para esta parcela específica
+            const adjustedInstallmentDate = isWeekend(baseInstallmentDate)
+              ? adjustDueDateForWeekend(baseInstallmentDate, values.weekend_handling)
+              : baseInstallmentDate;
+
+            // Salvar data original se foi ajustada
+            const originalInstallmentDate = isWeekend(baseInstallmentDate)
+              ? format(baseInstallmentDate, "yyyy-MM-dd")
+              : null;
+
             await createInstallment.mutateAsync({
               obligation_id: deadline.id,
               client_id: clientId,
               installment_number: i,
               total_installments: totalInstallments,
-              due_date: installmentDueDate,
+              due_date: format(adjustedInstallmentDate, "yyyy-MM-dd"),
+              original_due_date: originalInstallmentDate,
               status: "pending",
               amount: 0,
             });

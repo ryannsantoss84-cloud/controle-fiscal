@@ -17,7 +17,17 @@ const Taxes = lazy(() => import("./pages/Taxes"));
 const Obligations = lazy(() => import("./pages/Obligations"));
 const Clients = lazy(() => import("./pages/Clients"));
 const Calendar = lazy(() => import("./pages/Calendar"));
-const Installments = lazy(() => import("./pages/Installments"));
+const Installments = lazy(() =>
+  import("./pages/Installments").catch((error) => {
+    console.error("Failed to load Installments page, retrying...", error);
+    // Retry once after a short delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(import("./pages/Installments"));
+      }, 100);
+    });
+  })
+);
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Templates = lazy(() => import("./pages/Templates"));
