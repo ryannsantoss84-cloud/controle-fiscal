@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { addMonths, parseISO, format } from "date-fns";
+import { isWeekend, adjustDueDateForWeekend } from "@/lib/weekendUtils";
 import {
   Dialog,
   DialogContent,
@@ -72,7 +74,15 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
     },
   });
 
+  // Converter regra de weekend para formato esperado
+  const convertWeekendRule = (rule: "postpone" | "anticipate" | "keep"): "advance" | "postpone" | "next_business_day" => {
+    if (rule === "postpone") return "next_business_day";
+    if (rule === "anticipate") return "advance";
+    return "next_business_day";
+  };
+
   const performSubmission = async (values: z.infer<typeof formSchema>) => {
+    // Criar a parcela principal
     await createInstallment.mutateAsync({
       name: values.name,
       client_id: values.client_id,
@@ -85,10 +95,52 @@ export function InstallmentForm({ open: controlledOpen, onOpenChange: controlled
       // @ts-ignore
       protocol: values.protocol,
     });
-    toast({
-      title: "Sucesso!",
-      description: "Parcela criada com sucesso.",
-    });
+
+    // Se não for a última parcela, gerar as restantes automaticamente
+    if (values.installment_number < values.total_installments) {
+      const remainingCount = values.total_installments - values.installment_number;
+
+      for (let i = 1; i <= remainingCount; i++) {
+        const nextNumber = values.installment_number + i;
+
+        // Calcular data base (adicionar meses à data da parcela atual)
+        const baseDate = addMonths(parseISO(values.due_date), i);
+
+        // Aplicar regras de final de semana/feriado
+        const adjustedDate = isWeekend(baseDate)
+          ? adjustDueDateForWeekend(baseDate, convertWeekendRule(values.weekend_rule))
+          : baseDate;
+
+        const originalDate = isWeekend(baseDate)
+          ? format(baseDate, "yyyy-MM-dd")
+          : null;
+
+        await createInstallment.mutateAsync({
+          name: values.name,
+          client_id: values.client_id,
+          amount: 0,
+          due_date: format(adjustedDate, "yyyy-MM-dd"),
+          original_due_date: originalDate,
+          status: "pending",
+          installment_number: nextNumber,
+          total_installments: values.total_installments,
+          obligation_id: null,
+          // @ts-ignore
+          protocol: values.protocol,
+        });
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: `Parcela ${values.installment_number}/${values.total_installments} e mais ${remainingCount} ${remainingCount === 1 ? 'parcela criada' : 'parcelas criadas'} automaticamente!`,
+      });
+    } else {
+      toast({
+        title: "Sucesso!",
+        description: "Parcela criada com sucesso.",
+      });
+    }
+
     setOpen(false);
     form.reset();
   };
