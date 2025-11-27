@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TimelineWidget } from "@/components/dashboard/TimelineWidget";
 
 export default function Dashboard() {
   const { stats, isLoading } = useDashboard();
@@ -160,47 +161,20 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Lista de Próximos Vencimentos */}
-        <Card className={`glass-card border-none shadow-elegant ${overdueItems && overdueItems.length > 0 ? '' : 'col-span-2'}`}>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <CalendarDays className="h-5 w-5 text-primary" />
-              </div>
-              Próximos Vencimentos
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/calendar')}>
-              Ver Calendário <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {upcomingObligations && upcomingObligations.length > 0 ? (
-                upcomingObligations.map((item: any) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50 hover:bg-muted/50 hover:shadow-md transition-all group">
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold leading-none group-hover:text-primary transition-colors">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">{item.clients?.name}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className={`text-xs px-3 py-1.5 rounded-full font-semibold ${item.due_date === new Date().toISOString().split('T')[0] ? 'bg-orange-500/10 text-orange-700 border border-orange-500/20' :
-                        'bg-primary/10 text-primary border border-primary/20'
-                        }`}>
-                        {formatDate(item.due_date)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState
-                  icon={Check}
-                  title="Tudo em dia!"
-                  description="Nenhuma obrigação próxima encontrada."
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Timeline de Vencimentos */}
+        <div className={overdueItems && overdueItems.length > 0 ? '' : 'col-span-2'}>
+          <TimelineWidget
+            items={(upcomingObligations || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              due_date: item.due_date,
+              status: item.status,
+              type: item.type,
+              client_name: item.clients?.name,
+              sphere: item.sphere
+            }))}
+          />
+        </div>
       </div>
     </div>
   );
