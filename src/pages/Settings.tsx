@@ -54,14 +54,14 @@ export default function Settings() {
             const { data, error } = await supabase
                 .from("settings")
                 .select("*")
-                .single();
+                .maybeSingle(); // Usar maybeSingle para evitar erro 406/JSON se vazio
 
-            if (error && error.code !== "PGRST116") {
+            if (error) {
                 throw error;
             }
 
             if (data) {
-                const settingsData = data as SettingsData;
+                const settingsData = data as unknown as SettingsData;
                 setSettings({
                     office_name: settingsData.office_name || "",
                     office_document: settingsData.office_document || "",
@@ -73,6 +73,21 @@ export default function Settings() {
                     notification_days: parseInt(localStorage.getItem("notification_days") || "7"),
                     items_per_page: parseInt(localStorage.getItem("items_per_page") || "25"),
                 });
+            } else {
+                // Se não houver configurações, criar padrão
+                const { error: createError } = await supabase
+                    .from("settings")
+                    .insert([{
+                        office_name: "Meu Escritório",
+                        default_weekend_handling: "next_business_day",
+                        auto_create_recurrences: true,
+                        notification_days_before: 7
+                    }]);
+
+                if (!createError) {
+                    // Recarregar após criar
+                    loadSettings();
+                }
             }
         } catch (error: unknown) {
             console.error("Erro ao carregar configurações:", error);
