@@ -19,6 +19,9 @@ import {
     BarChart3
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { useDeadlines } from "@/hooks/useDeadlines";
+import { useInstallments } from "@/hooks/useInstallments";
+import { exportToXLSX } from "@/lib/exportUtils";
 
 interface SettingsData {
     office_name: string | null;
@@ -33,6 +36,11 @@ export default function Settings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState("company");
+    const [exporting, setExporting] = useState(false);
+
+    // Buscar dados para exportação
+    const { deadlines } = useDeadlines({ pageSize: 1000 });
+    const { installments } = useInstallments({ pageSize: 1000 });
 
     const [settings, setSettings] = useState({
         office_name: "",
@@ -135,12 +143,25 @@ export default function Settings() {
         }
     };
 
-    const handleExportData = () => {
-        toast({
-            title: "Exportação iniciada",
-            description: "Seus dados estão sendo preparados para download.",
-        });
-        // TODO: Implementar exportação real
+    const handleExportData = async () => {
+        setExporting(true);
+        try {
+            const result = exportToXLSX(deadlines, installments, 'dados-fiscais');
+
+            toast({
+                title: "Exportação concluída!",
+                description: `${result.deadlinesCount} prazos e ${result.installmentsCount} parcelas exportados para ${result.filename}`,
+            });
+        } catch (error) {
+            console.error('Erro ao exportar:', error);
+            toast({
+                title: "Erro na exportação",
+                description: "Não foi possível exportar os dados. Tente novamente.",
+                variant: "destructive",
+            });
+        } finally {
+            setExporting(false);
+        }
     };
 
     if (loading) {
@@ -412,12 +433,17 @@ export default function Settings() {
                                 <div>
                                     <p className="font-medium">Exportar todos os dados</p>
                                     <p className="text-sm text-muted-foreground">
-                                        Baixe um arquivo CSV com todos os prazos e parcelas
+                                        Baixe um arquivo Excel (XLSX) formatado com todos os prazos e parcelas
                                     </p>
                                 </div>
-                                <Button onClick={handleExportData} variant="outline" className="gap-2">
+                                <Button
+                                    onClick={handleExportData}
+                                    variant="outline"
+                                    className="gap-2"
+                                    disabled={exporting}
+                                >
                                     <Download className="h-4 w-4" />
-                                    Exportar
+                                    {exporting ? "Exportando..." : "Exportar"}
                                 </Button>
                             </div>
                         </CardContent>
