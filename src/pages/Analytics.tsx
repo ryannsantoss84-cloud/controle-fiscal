@@ -450,6 +450,203 @@ export default function Analytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* SEÇÃO DE ANALYTICS DE TEMPO */}
+      <Card className="border-none shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
+            Análise de Tempo de Execução
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Tempo Médio Geral */}
+            <Card className="border-none shadow-md bg-gradient-to-br from-purple/10 to-purple/5">
+              <CardContent className="p-6 text-center">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-purple" />
+                <p className="text-3xl font-bold">
+                  {(() => {
+                    const completedDeadlines = deadlines.filter(d => d.status === 'completed' && d.time_spent_minutes);
+                    if (completedDeadlines.length === 0) return '-';
+                    const avgMinutes = completedDeadlines.reduce((sum, d) => sum + (d.time_spent_minutes || 0), 0) / completedDeadlines.length;
+                    if (avgMinutes < 60) return `${Math.round(avgMinutes)}min`;
+                    if (avgMinutes < 1440) {
+                      const hours = Math.floor(avgMinutes / 60);
+                      const mins = Math.round(avgMinutes % 60);
+                      return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+                    }
+                    const days = Math.floor(avgMinutes / 1440);
+                    const hours = Math.floor((avgMinutes % 1440) / 60);
+                    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+                  })()}
+                </p>
+                <p className="text-sm text-muted-foreground">Tempo Médio Geral</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {deadlines.filter(d => d.status === 'completed' && d.time_spent_minutes).length} tarefas concluídas
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Tempo por Tipo */}
+            <Card className="border-none shadow-md bg-gradient-to-br from-teal/10 to-teal/5">
+              <CardContent className="p-6">
+                <BarChart3 className="w-8 h-8 mx-auto mb-3 text-teal" />
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Impostos:</span>
+                    <span className="font-bold">
+                      {(() => {
+                        const taxDeadlines = deadlines.filter(d => d.type === 'tax' && d.status === 'completed' && d.time_spent_minutes);
+                        if (taxDeadlines.length === 0) return '-';
+                        const avgMinutes = taxDeadlines.reduce((sum, d) => sum + (d.time_spent_minutes || 0), 0) / taxDeadlines.length;
+                        if (avgMinutes < 60) return `${Math.round(avgMinutes)}min`;
+                        const hours = Math.floor(avgMinutes / 60);
+                        const mins = Math.round(avgMinutes % 60);
+                        return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Obrigações:</span>
+                    <span className="font-bold">
+                      {(() => {
+                        const obligationDeadlines = deadlines.filter(d => d.type === 'obligation' && d.status === 'completed' && d.time_spent_minutes);
+                        if (obligationDeadlines.length === 0) return '-';
+                        const avgMinutes = obligationDeadlines.reduce((sum, d) => sum + (d.time_spent_minutes || 0), 0) / obligationDeadlines.length;
+                        if (avgMinutes < 60) return `${Math.round(avgMinutes)}min`;
+                        const hours = Math.floor(avgMinutes / 60);
+                        const mins = Math.round(avgMinutes % 60);
+                        return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-3">Tempo Médio por Tipo</p>
+              </CardContent>
+            </Card>
+
+            {/* Tempo por Jurisdição */}
+            <Card className="border-none shadow-md bg-gradient-to-br from-pink/10 to-pink/5">
+              <CardContent className="p-6">
+                <Target className="w-8 h-8 mx-auto mb-3 text-pink" />
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Federal:</span>
+                    <span className="font-bold">
+                      {(() => {
+                        const federalDeadlines = deadlines.filter(d => d.sphere === 'federal' && d.status === 'completed' && d.time_spent_minutes);
+                        if (federalDeadlines.length === 0) return '-';
+                        const avgMinutes = federalDeadlines.reduce((sum, d) => sum + (d.time_spent_minutes || 0), 0) / federalDeadlines.length;
+                        if (avgMinutes < 60) return `${Math.round(avgMinutes)}min`;
+                        const hours = Math.floor(avgMinutes / 60);
+                        return `${hours}h`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Estadual:</span>
+                    <span className="font-bold">
+                      {(() => {
+                        const stateDeadlines = deadlines.filter(d => d.sphere === 'state' && d.status === 'completed' && d.time_spent_minutes);
+                        if (stateDeadlines.length === 0) return '-';
+                        const avgMinutes = stateDeadlines.reduce((sum, d) => sum + (d.time_spent_minutes || 0), 0) / stateDeadlines.length;
+                        if (avgMinutes < 60) return `${Math.round(avgMinutes)}min`;
+                        const hours = Math.floor(avgMinutes / 60);
+                        return `${hours}h`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Municipal:</span>
+                    <span className="font-bold">
+                      {(() => {
+                        const municipalDeadlines = deadlines.filter(d => d.sphere === 'municipal' && d.status === 'completed' && d.time_spent_minutes);
+                        if (municipalDeadlines.length === 0) return '-';
+                        const avgMinutes = municipalDeadlines.reduce((sum, d) => sum + (d.time_spent_minutes || 0), 0) / municipalDeadlines.length;
+                        if (avgMinutes < 60) return `${Math.round(avgMinutes)}min`;
+                        const hours = Math.floor(avgMinutes / 60);
+                        return `${hours}h`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-3">Tempo Médio por Jurisdição</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabela: Top 10 Tarefas Mais Demoradas */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-warning" />
+              Top 10 Tarefas Mais Demoradas
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">#</th>
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Título</th>
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-left p-3 text-sm font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-right p-3 text-sm font-medium text-muted-foreground">Tempo Gasto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deadlines
+                    .filter(d => d.status === 'completed' && d.time_spent_minutes)
+                    .sort((a, b) => (b.time_spent_minutes || 0) - (a.time_spent_minutes || 0))
+                    .slice(0, 10)
+                    .map((deadline, index) => (
+                      <tr key={deadline.id} className="border-b hover:bg-muted/50 transition-colors">
+                        <td className="p-3">
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-white text-sm ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                              index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                                index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                                  'bg-gradient-to-br from-muted to-muted-foreground'
+                            }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="p-3 font-medium">{deadline.title}</td>
+                        <td className="p-3">
+                          <Badge variant={deadline.type === 'tax' ? 'destructive' : 'outline'}>
+                            {deadline.type === 'tax' ? 'Imposto' : 'Obrigação'}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {deadline.clients?.name || '-'}
+                        </td>
+                        <td className="p-3 text-right font-bold">
+                          {(() => {
+                            const minutes = deadline.time_spent_minutes || 0;
+                            if (minutes < 60) return `${Math.round(minutes)}min`;
+                            if (minutes < 1440) {
+                              const hours = Math.floor(minutes / 60);
+                              const mins = Math.round(minutes % 60);
+                              return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+                            }
+                            const days = Math.floor(minutes / 1440);
+                            const hours = Math.floor((minutes % 1440) / 60);
+                            return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+                          })()}
+                        </td>
+                      </tr>
+                    ))}
+                  {deadlines.filter(d => d.status === 'completed' && d.time_spent_minutes).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Nenhuma tarefa concluída com tempo registrado
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

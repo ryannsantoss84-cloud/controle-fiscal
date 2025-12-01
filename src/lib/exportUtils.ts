@@ -72,6 +72,28 @@ export function getJurisdictionLabel(jurisdiction: string): string {
 }
 
 /**
+ * Formata minutos para formato legível (ex: "2h 30min", "3d 5h")
+ */
+export function formatTimeMinutes(minutes: number | null | undefined): string {
+    if (!minutes || minutes === 0) return '-';
+
+    if (minutes < 60) {
+        return `${Math.round(minutes)}min`;
+    }
+
+    if (minutes < 1440) { // Menos de 1 dia
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.round(minutes % 60);
+        return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+    }
+
+    // 1 dia ou mais
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+}
+
+/**
  * Exporta dados para arquivo XLSX com formatação profissional
  */
 export function exportToXLSX(
@@ -89,6 +111,9 @@ export function exportToXLSX(
             'Título': d.title,
             'Cliente': d.client_name || '-',
             'Data de Vencimento': formatDateBR(d.due_date),
+            'Data de Criação': formatDateBR(d.created_at),
+            'Data de Conclusão': d.completed_at ? formatDateBR(d.completed_at) : '-',
+            'Tempo Gasto': formatTimeMinutes(d.time_spent_minutes),
             'Status': getStatusLabel(d.status),
             'Jurisdição': getJurisdictionLabel(d.jurisdiction),
             'Recorrente': d.is_recurring ? 'Sim' : 'Não',
@@ -103,6 +128,9 @@ export function exportToXLSX(
             { wch: 35 },  // Título
             { wch: 25 },  // Cliente
             { wch: 18 },  // Data de Vencimento
+            { wch: 18 },  // Data de Criação
+            { wch: 18 },  // Data de Conclusão
+            { wch: 15 },  // Tempo Gasto
             { wch: 12 },  // Status
             { wch: 12 },  // Jurisdição
             { wch: 12 },  // Recorrente
@@ -120,7 +148,9 @@ export function exportToXLSX(
             'Parcela': `${i.installment_number}/${i.total_installments}`,
             'Valor': i.amount,
             'Data de Vencimento': formatDateBR(i.due_date),
+            'Data de Criação': formatDateBR(i.created_at),
             'Data de Pagamento': i.paid_at ? formatDateBR(i.paid_at) : '-',
+            'Tempo até Pagamento': formatTimeMinutes(i.time_to_payment_minutes),
             'Status': getInstallmentStatusLabel(i.status),
             'Observações': i.notes || '-',
         }));
@@ -134,7 +164,9 @@ export function exportToXLSX(
             { wch: 10 },  // Parcela
             { wch: 15 },  // Valor
             { wch: 18 },  // Data de Vencimento
+            { wch: 18 },  // Data de Criação
             { wch: 18 },  // Data de Pagamento
+            { wch: 18 },  // Tempo até Pagamento
             { wch: 12 },  // Status
             { wch: 40 },  // Observações
         ];
