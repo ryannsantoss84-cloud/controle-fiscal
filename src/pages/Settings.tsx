@@ -18,7 +18,7 @@ import {
     Download,
     BarChart3
 } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 
 interface SettingsData {
     office_name: string | null;
@@ -32,6 +32,7 @@ export default function Settings() {
     const { theme, setTheme } = useTheme();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState("company");
 
     const [settings, setSettings] = useState({
         office_name: "",
@@ -158,7 +159,7 @@ export default function Settings() {
                 </p>
             </div>
 
-            <Tabs defaultValue="company" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="company" className="gap-2">
                         <Building className="h-4 w-4" />
@@ -249,7 +250,7 @@ export default function Settings() {
                 </TabsContent>
 
                 {/* ABA APARÊNCIA */}
-                <TabsContent value="appearance" className="space-y-4">
+                <TabsContent value="appearance" className="space-y-4" forceMount>
                     <Card>
                         <CardHeader>
                             <CardTitle>Preferências Visuais</CardTitle>
@@ -299,7 +300,7 @@ export default function Settings() {
                 </TabsContent>
 
                 {/* ABA AUTOMAÇÃO */}
-                <TabsContent value="automation" className="space-y-4">
+                <TabsContent value="automation" className="space-y-4" forceMount>
                     <Card>
                         <CardHeader>
                             <CardTitle>Regras de Automação</CardTitle>
@@ -359,7 +360,7 @@ export default function Settings() {
                 </TabsContent>
 
                 {/* ABA NOTIFICAÇÕES */}
-                <TabsContent value="notifications" className="space-y-4">
+                <TabsContent value="notifications" className="space-y-4" forceMount>
                     <Card>
                         <CardHeader>
                             <CardTitle>Preferências de Notificações</CardTitle>
@@ -395,7 +396,7 @@ export default function Settings() {
                 </TabsContent>
 
                 {/* ABA DADOS */}
-                <TabsContent value="data" className="space-y-4">
+                <TabsContent value="data" className="space-y-4" forceMount>
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">

@@ -23,7 +23,7 @@ export function TopBar() {
 
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <NotificationBell />
+        {/* <NotificationBell /> */}
       </div>
     </div>
   );
