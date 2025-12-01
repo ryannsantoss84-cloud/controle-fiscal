@@ -11,6 +11,8 @@ export interface Deadline {
   description?: string;
   due_date: string;
   completed_at?: string | null;
+  started_at?: string | null;
+  time_spent_minutes?: number | null;
   status: "pending" | "in_progress" | "completed" | "overdue";
   recurrence: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
   type: "obligation" | "tax";

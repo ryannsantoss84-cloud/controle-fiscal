@@ -10,6 +10,7 @@ import { useState } from "react";
 import { DeadlineDetails } from "./DeadlineDetails";
 import { DeadlineEditForm } from "@/components/forms/DeadlineEditForm";
 import { formatDate } from "@/lib/utils";
+import { TimeTracker } from "@/components/shared/TimeTracker";
 
 interface DeadlineCardProps {
   deadline: Deadline & { clients?: { id: string; name: string } | null; };
@@ -128,6 +129,15 @@ export function DeadlineCard({ deadline, isSelected, onToggleSelect }: DeadlineC
               </span>
             </div>
           )}
+
+          {/* Controle de Tempo */}
+          <TimeTracker
+            createdAt={deadline.created_at}
+            completedAt={deadline.completed_at}
+            timeSpentMinutes={deadline.time_spent_minutes}
+            status={deadline.status}
+            compact
+          />
         </CardContent>
 
         <CardFooter className="pt-3 border-t flex flex-col gap-2">

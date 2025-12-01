@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { InstallmentEditForm } from "@/components/forms/InstallmentEditForm";
 import { DeleteConfirmation } from "@/components/shared/DeleteConfirmation";
 import { formatDate } from "@/lib/utils";
+import { TimeTracker } from "@/components/shared/TimeTracker";
 
 interface InstallmentCardProps {
   installment: any;
@@ -128,6 +129,15 @@ export function InstallmentCard({ installment, isSelected, onToggleSelect }: Ins
               <span>Parcela atrasada!</span>
             </div>
           )}
+
+          {/* Controle de Tempo */}
+          <TimeTracker
+            createdAt={installment.created_at}
+            completedAt={installment.paid_at}
+            timeSpentMinutes={installment.time_to_payment_minutes}
+            status={installment.status}
+            compact
+          />
         </CardContent>
 
         <CardFooter className="pt-3 border-t flex gap-2">
