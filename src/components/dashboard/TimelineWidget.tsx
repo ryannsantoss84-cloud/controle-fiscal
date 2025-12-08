@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, AlertCircle, CheckCircle } from "lucide-react";
-import { format, addDays, isAfter, isBefore, startOfDay, differenceInDays } from "date-fns";
+import { format, addDays, isAfter, isBefore, startOfDay, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,14 +40,15 @@ export function TimelineWidget({ items }: TimelineWidgetProps) {
         return items
             .filter((item) => {
                 if (item.status === "completed" || item.status === "paid") return false;
-                const dueDate = startOfDay(new Date(item.due_date));
+                // Usar parseISO para evitar problemas de timezone
+                const dueDate = startOfDay(parseISO(item.due_date));
                 return isAfter(dueDate, today) || dueDate.getTime() === today.getTime();
             })
             .filter((item) => {
-                const dueDate = startOfDay(new Date(item.due_date));
+                const dueDate = startOfDay(parseISO(item.due_date));
                 return isBefore(dueDate, endDate) || dueDate.getTime() === endDate.getTime();
             })
-            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+            .sort((a, b) => parseISO(a.due_date).getTime() - parseISO(b.due_date).getTime());
     }, [items, period]);
 
     const groupedByDate = useMemo(() => {
@@ -64,7 +65,7 @@ export function TimelineWidget({ items }: TimelineWidgetProps) {
 
     const getUrgencyLevel = (dueDate: string) => {
         const today = startOfDay(new Date());
-        const due = startOfDay(new Date(dueDate));
+        const due = startOfDay(parseISO(dueDate));
         const days = differenceInDays(due, today);
 
         if (days <= 2) return "urgent"; // Vermelho
@@ -128,9 +129,10 @@ export function TimelineWidget({ items }: TimelineWidgetProps) {
                     <div className="space-y-6">
                         {Object.entries(groupedByDate).map(([date, dateItems]) => {
                             const urgencyLevel = getUrgencyLevel(date);
-                            const dueDate = new Date(date);
+                            // Usar parseISO para evitar problemas de timezone
+                            const dueDate = parseISO(date);
                             const today = startOfDay(new Date());
-                            const daysUntil = differenceInDays(dueDate, today);
+                            const daysUntil = differenceInDays(startOfDay(dueDate), today);
 
                             return (
                                 <div key={date} className="space-y-3">
