@@ -16,12 +16,19 @@ import {
     Bell,
     Database,
     Download,
-    BarChart3
+    BarChart3,
+    FileText,
+    BellRing,
+    Check,
+    X
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { useInstallments } from "@/hooks/useInstallments";
+import { useClients } from "@/hooks/useClients";
 import { exportToXLSX } from "@/lib/exportUtils";
+import { exportFullReportPDF } from "@/lib/pdfExport";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface SettingsData {
     office_name: string | null;
@@ -41,6 +48,11 @@ export default function Settings() {
     // Buscar dados para exportação
     const { deadlines } = useDeadlines({ pageSize: 1000 });
     const { installments } = useInstallments({ pageSize: 1000 });
+    const { clients } = useClients({ pageSize: 1000 });
+
+    // Hook de notificações push
+    const { permission, isSupported, requestPermission, sendNotification } = usePushNotifications();
+    const [exportingPDF, setExportingPDF] = useState(false);
 
     const [settings, setSettings] = useState({
         office_name: "",
@@ -389,7 +401,7 @@ export default function Settings() {
                                 Configure quando e como ser notificado
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-6">
                             <div className="space-y-3">
                                 <Label htmlFor="notification_days">Dias de Antecedência para Alertas</Label>
                                 <Select
@@ -414,6 +426,97 @@ export default function Settings() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Notificações Push */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <BellRing className="h-5 w-5" />
+                                Notificações Push do Navegador
+                            </CardTitle>
+                            <CardDescription>
+                                Receba alertas mesmo quando não estiver na página
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {!isSupported ? (
+                                <div className="flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                                    <X className="h-5 w-5 text-destructive" />
+                                    <div>
+                                        <p className="font-medium text-destructive">Não suportado</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Seu navegador não suporta notificações push.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            {permission === 'granted' ? (
+                                                <div className="p-2 bg-green-500/10 rounded-full">
+                                                    <Check className="h-5 w-5 text-green-600" />
+                                                </div>
+                                            ) : permission === 'denied' ? (
+                                                <div className="p-2 bg-red-500/10 rounded-full">
+                                                    <X className="h-5 w-5 text-red-600" />
+                                                </div>
+                                            ) : (
+                                                <div className="p-2 bg-orange-500/10 rounded-full">
+                                                    <Bell className="h-5 w-5 text-orange-600" />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="font-medium">
+                                                    Status: {permission === 'granted' ? 'Ativadas' :
+                                                        permission === 'denied' ? 'Bloqueadas' : 'Não solicitado'}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {permission === 'granted' && 'Você receberá alertas sobre prazos importantes.'}
+                                                    {permission === 'denied' && 'Habilite nas configurações do navegador.'}
+                                                    {permission === 'default' && 'Clique para ativar as notificações.'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {permission !== 'granted' && permission !== 'denied' && (
+                                            <Button onClick={requestPermission} variant="outline" className="gap-2">
+                                                <Bell className="h-4 w-4" />
+                                                Ativar Notificações
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {permission === 'granted' && (
+                                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                                            <div>
+                                                <p className="font-medium">Testar Notificação</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Envie uma notificação de teste para verificar se está funcionando
+                                                </p>
+                                            </div>
+                                            <Button
+                                                onClick={() => {
+                                                    sendNotification({
+                                                        title: '🔔 Teste de Notificação',
+                                                        body: 'As notificações estão funcionando corretamente!',
+                                                    });
+                                                    toast({
+                                                        title: 'Notificação enviada!',
+                                                        description: 'Verifique se a notificação apareceu.',
+                                                    });
+                                                }}
+                                                variant="outline"
+                                                className="gap-2"
+                                            >
+                                                <BellRing className="h-4 w-4" />
+                                                Testar
+                                            </Button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 {/* ABA DADOS */}
@@ -429,11 +532,12 @@ export default function Settings() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            {/* Exportar Excel */}
                             <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
-                                    <p className="font-medium">Exportar todos os dados</p>
+                                    <p className="font-medium">Exportar para Excel (XLSX)</p>
                                     <p className="text-sm text-muted-foreground">
-                                        Baixe um arquivo Excel (XLSX) formatado com todos os prazos e parcelas
+                                        Arquivo formatado com todos os prazos e parcelas
                                     </p>
                                 </div>
                                 <Button
@@ -443,7 +547,72 @@ export default function Settings() {
                                     disabled={exporting}
                                 >
                                     <Download className="h-4 w-4" />
-                                    {exporting ? "Exportando..." : "Exportar"}
+                                    {exporting ? "Exportando..." : "Exportar XLSX"}
+                                </Button>
+                            </div>
+
+                            {/* Exportar PDF */}
+                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                                <div>
+                                    <p className="font-medium">Exportar Relatório PDF</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Relatório completo formatado para impressão
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={async () => {
+                                        setExportingPDF(true);
+                                        try {
+                                            const deadlinesForPDF = deadlines.map(d => ({
+                                                id: d.id,
+                                                title: d.title,
+                                                type: d.type || 'obligation',
+                                                client_name: d.clients?.name,
+                                                due_date: d.due_date,
+                                                status: d.status,
+                                                sphere: d.sphere,
+                                                responsible: d.responsible,
+                                            }));
+
+                                            const installmentsForPDF = installments.map(i => ({
+                                                id: i.id,
+                                                name: i.name || i.description,
+                                                client_name: i.clients?.name,
+                                                installment_number: i.installment_number,
+                                                total_installments: i.total_installments,
+                                                amount: i.amount,
+                                                due_date: i.due_date,
+                                                status: i.status,
+                                                paid_at: i.paid_at,
+                                            }));
+
+                                            exportFullReportPDF(deadlinesForPDF, installmentsForPDF, {
+                                                title: 'Relatório Fiscal Completo',
+                                                officeName: settings.office_name || undefined,
+                                                officeDocument: settings.office_document || undefined,
+                                            });
+
+                                            toast({
+                                                title: "PDF exportado!",
+                                                description: "O relatório foi baixado com sucesso.",
+                                            });
+                                        } catch (error) {
+                                            console.error('Erro ao exportar PDF:', error);
+                                            toast({
+                                                title: "Erro na exportação",
+                                                description: "Não foi possível gerar o PDF.",
+                                                variant: "destructive",
+                                            });
+                                        } finally {
+                                            setExportingPDF(false);
+                                        }
+                                    }}
+                                    variant="outline"
+                                    className="gap-2"
+                                    disabled={exportingPDF}
+                                >
+                                    <FileText className="h-4 w-4" />
+                                    {exportingPDF ? "Gerando..." : "Exportar PDF"}
                                 </Button>
                             </div>
                         </CardContent>
@@ -460,23 +629,28 @@ export default function Settings() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid gap-4 md:grid-cols-3">
-                                <div className="p-4 border rounded-lg">
-                                    <p className="text-2xl font-bold">-</p>
+                            <div className="grid gap-4 md:grid-cols-4">
+                                <div className="p-4 border rounded-lg bg-gradient-to-br from-primary/5 to-transparent">
+                                    <p className="text-2xl font-bold text-primary">{clients.length}</p>
                                     <p className="text-sm text-muted-foreground">Total de Clientes</p>
                                 </div>
-                                <div className="p-4 border rounded-lg">
-                                    <p className="text-2xl font-bold">-</p>
-                                    <p className="text-sm text-muted-foreground">Parcelas Ativas</p>
+                                <div className="p-4 border rounded-lg bg-gradient-to-br from-blue-500/5 to-transparent">
+                                    <p className="text-2xl font-bold text-blue-600">{deadlines.length}</p>
+                                    <p className="text-sm text-muted-foreground">Total de Prazos</p>
                                 </div>
-                                <div className="p-4 border rounded-lg">
-                                    <p className="text-2xl font-bold">-</p>
-                                    <p className="text-sm text-muted-foreground">Prazos Pendentes</p>
+                                <div className="p-4 border rounded-lg bg-gradient-to-br from-orange-500/5 to-transparent">
+                                    <p className="text-2xl font-bold text-orange-600">
+                                        {installments.filter(i => i.status === 'pending').length}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">Parcelas Pendentes</p>
+                                </div>
+                                <div className="p-4 border rounded-lg bg-gradient-to-br from-red-500/5 to-transparent">
+                                    <p className="text-2xl font-bold text-red-600">
+                                        {deadlines.filter(d => d.status === 'overdue').length}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">Prazos Atrasados</p>
                                 </div>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-4">
-                                * Estatísticas detalhadas em breve
-                            </p>
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -53,22 +53,31 @@ export function DeadlineCard({ deadline, isSelected, onToggleSelect }: DeadlineC
     <>
       <Card className="flex flex-col h-full border-border/40 shadow-sm hover:shadow-md transition-all duration-200 bg-card/50 cursor-pointer" onClick={() => setDetailsOpen(true)}>
         <CardHeader className="pb-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-3 flex-1">
-              {onToggleSelect && (
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => onToggleSelect(deadline.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="mt-1"
-                />
-              )}
-              <h3 className="text-base font-medium text-foreground leading-tight">{deadline.title}</h3>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <Badge variant={config.badgeVariant} className="font-normal">{config.label}</Badge>
-              <div className="flex gap-1">
-                <Badge variant={deadline.type === 'tax' ? 'destructive' : 'outline'} className="font-normal text-xs">{deadline.type === 'tax' ? 'Imposto' : 'Obrigação'}</Badge>
+          <div className="flex items-start gap-2">
+            {onToggleSelect && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect(deadline.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 flex-shrink-0"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-base font-medium text-foreground leading-tight flex-1 min-w-0 break-words">
+                  {deadline.title}
+                </h3>
+                <Badge variant={config.badgeVariant} className="font-normal flex-shrink-0">
+                  {config.label}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-2">
+                <Badge
+                  variant={deadline.type === 'tax' ? 'destructive' : 'outline'}
+                  className="font-normal text-xs"
+                >
+                  {deadline.type === 'tax' ? 'Imposto' : 'Obrigação'}
+                </Badge>
                 {deadline.sphere && (
                   <Badge variant="outline" className="font-normal text-xs capitalize">
                     {deadline.sphere === 'federal' ? 'Federal' : deadline.sphere === 'state' ? 'Estadual' : 'Municipal'}
@@ -78,7 +87,7 @@ export function DeadlineCard({ deadline, isSelected, onToggleSelect }: DeadlineC
             </div>
           </div>
           {deadline.description && (
-            <p className="text-sm text-muted-foreground font-normal mt-1 line-clamp-2">{deadline.description}</p>
+            <p className="text-sm text-muted-foreground font-normal line-clamp-2">{deadline.description}</p>
           )}
         </CardHeader>
 

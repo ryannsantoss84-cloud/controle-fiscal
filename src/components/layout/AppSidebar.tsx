@@ -9,10 +9,11 @@ import {
   FileStack,
   Command,
   ChevronRight,
-  LogOut,
-  User
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { KeyboardShortcutsModal } from "@/components/shared/KeyboardShortcutsModal";
+import { useNavigationShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   Sidebar,
   SidebarContent,
@@ -52,6 +53,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  // Ativar atalhos de navegação (Alt+H, Alt+O, etc)
+  useNavigationShortcuts();
 
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
@@ -183,7 +187,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-
+      <SidebarFooter className="p-4 border-t border-border/40">
+        <div className={`flex ${state === "collapsed" ? "flex-col gap-2" : "gap-2"} items-center justify-center`}>
+          <ThemeToggle />
+          <KeyboardShortcutsModal />
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

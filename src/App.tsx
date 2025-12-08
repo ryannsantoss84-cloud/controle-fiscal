@@ -10,6 +10,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/theme-provider";
 import { useEffect, lazy, Suspense } from "react";
 import { CommandPalette } from "./components/layout/CommandPalette";
+import { ConnectionStatus } from "./components/shared/ConnectionStatus";
 
 // Lazy load pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -33,7 +34,16 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Templates = lazy(() => import("./pages/Templates"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos - dados são considerados frescos
+      gcTime: 10 * 60 * 1000,   // 10 minutos - mantém em cache
+      retry: 2,
+      refetchOnWindowFocus: false, // Evita refetch desnecessário ao focar janela
+    },
+  },
+});
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-screen w-full bg-background">
@@ -141,6 +151,7 @@ const App = () => (
           <BrowserRouter>
             <Toaster />
             <Sonner />
+            <ConnectionStatus />
             <AppContent />
           </BrowserRouter>
         </TooltipProvider>

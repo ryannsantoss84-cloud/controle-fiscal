@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+interface HasId {
+    id: string;
+}
+
 interface UseBulkActionsProps<T> {
     items: T[];
     getItemId?: (item: T) => string;
 }
 
-export function useBulkActions<T>({ items, getItemId = (item: any) => item.id }: UseBulkActionsProps<T>) {
+export function useBulkActions<T extends HasId>({ items, getItemId = (item) => item.id }: UseBulkActionsProps<T>) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const { toast } = useToast();
 

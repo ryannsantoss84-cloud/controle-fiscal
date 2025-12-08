@@ -23,17 +23,22 @@ export function useSorting<T>(initialKey: keyof T | string, initialDirection: So
         }));
     };
 
-    const sortData = (data: T[]) => {
+    const sortData = (data: T[]): T[] => {
         if (!data) return [];
 
-        return [...data].sort((a: any, b: any) => {
+        return [...data].sort((a, b) => {
             // Handle nested keys (e.g. 'clients.name')
-            const getValue = (obj: any, path: string) => {
-                return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+            const getValue = (obj: Record<string, unknown>, path: string): unknown => {
+                return path.split('.').reduce<unknown>((acc, part) => {
+                    if (acc && typeof acc === 'object' && part in (acc as Record<string, unknown>)) {
+                        return (acc as Record<string, unknown>)[part];
+                    }
+                    return undefined;
+                }, obj);
             };
 
-            const aValue = getValue(a, sortConfig.key as string);
-            const bValue = getValue(b, sortConfig.key as string);
+            const aValue = getValue(a as unknown as Record<string, unknown>, sortConfig.key as string);
+            const bValue = getValue(b as unknown as Record<string, unknown>, sortConfig.key as string);
 
             if (aValue === bValue) return 0;
 

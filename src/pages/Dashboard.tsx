@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -22,12 +23,23 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TimelineWidget } from "@/components/dashboard/TimelineWidget";
 
+// Tipagem para obrigações
+interface Obligation {
+  id: string;
+  title: string;
+  due_date: string;
+  status: string;
+  type?: string;
+  sphere?: string;
+  clients?: { name: string } | null;
+}
+
 export default function Dashboard() {
   const { stats, isLoading } = useDashboard();
   const navigate = useNavigate();
 
-  // Buscar próximas obrigações (lista expandida)
-  const { data: upcomingObligations } = useQuery({
+  // Buscar próximas obrigações (lista expandida) com tipagem
+  const { data: upcomingObligations } = useQuery<Obligation[]>({
     queryKey: ["dashboard-upcoming"],
     queryFn: async () => {
       const { data } = await supabase
@@ -36,13 +48,13 @@ export default function Dashboard() {
         .eq("status", "pending")
         .gte("due_date", new Date().toISOString().split('T')[0])
         .order("due_date", { ascending: true })
-        .limit(10); // Aumentado para 10
-      return data || [];
+        .limit(10);
+      return (data || []) as Obligation[];
     }
   });
 
-  // Buscar itens atrasados
-  const { data: overdueItems } = useQuery({
+  // Buscar itens atrasados com tipagem
+  const { data: overdueItems } = useQuery<Obligation[]>({
     queryKey: ["dashboard-overdue"],
     queryFn: async () => {
       const { data } = await supabase
@@ -51,9 +63,22 @@ export default function Dashboard() {
         .eq("status", "overdue")
         .order("due_date", { ascending: true })
         .limit(5);
-      return data || [];
+      return (data || []) as Obligation[];
     }
   });
+
+  // Memoizar dados do timeline para evitar re-renders
+  const timelineItems = useMemo(() => {
+    return (upcomingObligations || []).map((item) => ({
+      id: item.id,
+      title: item.title,
+      due_date: item.due_date,
+      status: item.status,
+      type: item.type,
+      client_name: item.clients?.name,
+      sphere: item.sphere
+    }));
+  }, [upcomingObligations]);
 
   if (isLoading) {
     return <div className="space-y-6 animate-fade-in">
@@ -136,14 +161,14 @@ export default function Dashboard() {
           <Card className="border-red-200 bg-red-50/30 dark:bg-red-900/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
-                <AlertCircle className="h-5 w-5" />
+                <AlertCircle className="h-5 w-5" aria-hidden="true" />
                 Atenção: Itens Atrasados
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {overdueItems.map((item: any) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-background rounded-md border border-red-100 shadow-sm">
+              <div className="space-y-2" role="list" aria-label="Lista de itens atrasados">
+                {overdueItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-background rounded-md border border-red-100 shadow-sm" role="listitem">
                     <div>
                       <p className="font-medium text-red-700">{item.title}</p>
                       <p className="text-xs text-muted-foreground">{item.clients?.name}</p>
@@ -163,17 +188,7 @@ export default function Dashboard() {
 
         {/* Timeline de Vencimentos */}
         <div className={overdueItems && overdueItems.length > 0 ? '' : 'col-span-2'}>
-          <TimelineWidget
-            items={(upcomingObligations || []).map((item: any) => ({
-              id: item.id,
-              title: item.title,
-              due_date: item.due_date,
-              status: item.status,
-              type: item.type,
-              client_name: item.clients?.name,
-              sphere: item.sphere
-            }))}
-          />
+          <TimelineWidget items={timelineItems} />
         </div>
       </div>
     </div>
