@@ -6,10 +6,11 @@ import { useInstallments } from "@/hooks/useInstallments";
 import { useClients } from "@/hooks/useClients";
 import { useState, useMemo } from "react";
 import {
-  TrendingUp, TrendingDown, CheckCircle2, Clock,
-  AlertCircle, Target, Users, Calendar, Award,
+  CheckCircle2, Clock,
+  AlertCircle, Target, Users, Award,
   Zap, Activity, BarChart3, PieChart as PieChartIcon
 } from "lucide-react";
+import { ProgressRing, StatCard, HeatmapCell, HealthBadge } from "./Analytics/components";
 
 // Paleta de cores moderna
 const COLORS = {
@@ -100,123 +101,6 @@ export default function Analytics() {
       };
     }).filter(c => c.total > 0).sort((a, b) => b.completionRate - a.completionRate);
   }, [clients, filteredItems]);
-
-  // Progress Ring Component
-  const ProgressRing = ({ percent, size = 120, strokeWidth = 12, color = COLORS.primary, label, value }: any) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (percent / 100) * circumference;
-
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <div className="relative" style={{ width: size, height: size }}>
-          <svg width={size} height={size} className="transform -rotate-90">
-            {/* Background circle */}
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth={strokeWidth}
-            />
-            {/* Progress circle */}
-            <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              className="transition-all duration-1000 ease-out"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{percent}%</div>
-              <div className="text-xs text-muted-foreground">{value}</div>
-            </div>
-          </div>
-        </div>
-        <p className="text-sm font-medium text-center">{label}</p>
-      </div>
-    );
-  };
-
-  // Stat Card Component
-  const StatCard = ({ icon: Icon, label, value, change, color, subtitle }: any) => (
-    <Card className="relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
-      <div
-        className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity"
-        style={{ background: `linear-gradient(135deg, ${color} 0%, transparent 100%)` }}
-      />
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div
-            className="p-3 rounded-xl shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)` }}
-          >
-            <Icon className="w-6 h-6" style={{ color }} />
-          </div>
-          {change !== undefined && (
-            <Badge
-              variant={change >= 0 ? "default" : "destructive"}
-              className="gap-1"
-            >
-              {change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {Math.abs(change)}%
-            </Badge>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground font-medium">{label}</p>
-          <p className="text-3xl font-bold tracking-tight">{value}</p>
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  // Heatmap Cell Component
-  const HeatmapCell = ({ value, max, label }: any) => {
-    const intensity = max > 0 ? (value / max) : 0;
-    const bgColor = intensity > 0.7 ? COLORS.success :
-      intensity > 0.4 ? COLORS.warning :
-        intensity > 0 ? COLORS.info : '#e5e7eb';
-
-    return (
-      <div
-        className="aspect-square rounded-lg flex items-center justify-center text-white font-bold text-sm hover:scale-110 transition-transform cursor-pointer shadow-sm"
-        style={{ backgroundColor: bgColor }}
-        title={`${label}: ${value}`}
-      >
-        {value}
-      </div>
-    );
-  };
-
-  // Client Health Badge
-  const HealthBadge = ({ health }: any) => {
-    const config = {
-      excellent: { label: 'Excelente', color: COLORS.success, icon: '🏆' },
-      good: { label: 'Bom', color: COLORS.info, icon: '✅' },
-      warning: { label: 'Atenção', color: COLORS.warning, icon: '⚠️' },
-    };
-    const { label, color, icon } = config[health as keyof typeof config];
-
-    return (
-      <span
-        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold text-white"
-        style={{ backgroundColor: color }}
-      >
-        <span>{icon}</span>
-        {label}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-8 p-6 bg-gradient-to-br from-background via-background to-muted/20 min-h-screen">
@@ -602,9 +486,9 @@ export default function Analytics() {
                       <tr key={deadline.id} className="border-b hover:bg-muted/50 transition-colors">
                         <td className="p-3">
                           <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-white text-sm ${index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                              index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
-                                index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
-                                  'bg-gradient-to-br from-muted to-muted-foreground'
+                            index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                              index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                                'bg-gradient-to-br from-muted to-muted-foreground'
                             }`}>
                             {index + 1}
                           </span>

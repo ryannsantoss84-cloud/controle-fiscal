@@ -117,6 +117,11 @@ export default function Settings() {
         }
     };
 
+    // Helper para atualizar configurações parcialmente
+    const handleSettingsChange = (partial: Partial<SettingsData>) => {
+        setSettings(prev => ({ ...prev, ...partial }));
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {

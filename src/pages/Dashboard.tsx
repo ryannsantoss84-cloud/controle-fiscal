@@ -11,7 +11,7 @@ import {
   Check
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -82,12 +82,12 @@ export default function Dashboard() {
 
   if (isLoading) {
     return <div className="space-y-6 animate-fade-in">
-      <Skeleton className="h-32 w-full rounded-lg" />
+      <CardSkeleton />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Skeleton className="h-32 rounded-lg" />
-        <Skeleton className="h-32 rounded-lg" />
-        <Skeleton className="h-32 rounded-lg" />
-        <Skeleton className="h-32 rounded-lg" />
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
       </div>
     </div>;
   }
