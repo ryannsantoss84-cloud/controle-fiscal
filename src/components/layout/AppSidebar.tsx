@@ -9,6 +9,7 @@ import {
   FileStack,
   Command,
   ChevronRight,
+  FileDown,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
@@ -35,6 +36,7 @@ const mainNav = [
   { title: "Visão Geral", url: "/", icon: LayoutDashboard },
   { title: "Agenda", url: "/calendar", icon: Calendar },
   { title: "Análise", url: "/analytics", icon: BarChart3 },
+  { title: "Relatórios", url: "/reports", icon: FileDown },
 ];
 
 const operationalNav = [

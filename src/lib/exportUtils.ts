@@ -1,4 +1,7 @@
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { saveAs } from 'file-saver';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -221,4 +224,185 @@ export function exportToXLSX(
         deadlinesCount: deadlines.length,
         installmentsCount: installments.length,
     };
+}
+
+/**
+ * Exporta dados para PDF com layout profissional
+ */
+export function exportToPDF(
+    deadlines: any[],
+    installments: any[],
+    filename: string = 'relatorio-fiscal'
+) {
+    const doc = new jsPDF();
+
+    // Cores do tema
+    const primaryColor: [number, number, number] = [30, 64, 175];
+    const textColor: [number, number, number] = [31, 41, 55];
+
+    // Cabeçalho
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, 210, 35, 'F');
+
+    // Título
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório Fiscal', 14, 18);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 28);
+
+    let yPos = 45;
+
+    // Resumo
+    doc.setTextColor(...textColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo', 14, yPos);
+    yPos += 10;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const pendingDeadlines = deadlines.filter(d => d.status === 'pending').length;
+    const completedDeadlines = deadlines.filter(d => d.status === 'completed').length;
+    const overdueDeadlines = deadlines.filter(d => d.status === 'overdue').length;
+
+    doc.text(`Total de Prazos: ${deadlines.length}`, 14, yPos);
+    doc.text(`Pendentes: ${pendingDeadlines}`, 80, yPos);
+    doc.text(`Concluídos: ${completedDeadlines}`, 120, yPos);
+    doc.text(`Atrasados: ${overdueDeadlines}`, 160, yPos);
+    yPos += 15;
+
+    // Tabela de Prazos
+    if (deadlines.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Prazos Fiscais', 14, yPos);
+        yPos += 5;
+
+        const deadlineRows = deadlines.slice(0, 50).map(d => [
+            getTypeLabel(d.type),
+            d.title.substring(0, 30),
+            d.client_name || '-',
+            formatDateBR(d.due_date),
+            getStatusLabel(d.status),
+        ]);
+
+        autoTable(doc, {
+            head: [['Tipo', 'Título', 'Cliente', 'Vencimento', 'Status']],
+            body: deadlineRows,
+            startY: yPos,
+            theme: 'striped',
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 8,
+            },
+            bodyStyles: {
+                textColor: textColor,
+                fontSize: 7,
+            },
+            alternateRowStyles: {
+                fillColor: [243, 244, 246],
+            },
+            margin: { left: 14, right: 14 },
+        });
+    }
+
+    // Tabela de Parcelas em nova página se houver
+    if (installments.length > 0) {
+        doc.addPage();
+
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, 210, 25, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Parcelas', 14, 16);
+
+        const installmentRows = installments.slice(0, 50).map(i => [
+            i.description.substring(0, 25),
+            i.client_name || '-',
+            `${i.installment_number}/${i.total_installments}`,
+            formatCurrency(i.amount),
+            formatDateBR(i.due_date),
+            getInstallmentStatusLabel(i.status),
+        ]);
+
+        autoTable(doc, {
+            head: [['Descrição', 'Cliente', 'Parcela', 'Valor', 'Vencimento', 'Status']],
+            body: installmentRows,
+            startY: 35,
+            theme: 'striped',
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 8,
+            },
+            bodyStyles: {
+                textColor: textColor,
+                fontSize: 7,
+            },
+            margin: { left: 14, right: 14 },
+        });
+    }
+
+    // Rodapé em todas as páginas
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(107, 114, 128);
+        doc.text(
+            `Página ${i} de ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: 'center' }
+        );
+        doc.text(
+            'Controle Fiscal - Sistema de Gestão',
+            14,
+            doc.internal.pageSize.height - 10
+        );
+    }
+
+    // Salvar
+    const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
+    doc.save(`${filename}_${timestamp}.pdf`);
+
+    return { filename: `${filename}_${timestamp}.pdf` };
+}
+
+/**
+ * Exporta dados para CSV
+ */
+export function exportToCSV(
+    deadlines: any[],
+    filename: string = 'prazos-fiscais'
+) {
+    const headers = ['Tipo', 'Título', 'Cliente', 'Vencimento', 'Status', 'Jurisdição', 'Descrição'];
+    const rows = deadlines.map(d => [
+        getTypeLabel(d.type),
+        d.title,
+        d.client_name || '-',
+        formatDateBR(d.due_date),
+        getStatusLabel(d.status),
+        getJurisdictionLabel(d.jurisdiction),
+        d.description || '-',
+    ]);
+
+    const csvContent = [
+        headers.join(';'),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' });
+    const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
+    saveAs(blob, `${filename}_${timestamp}.csv`);
+
+    return { filename: `${filename}_${timestamp}.csv` };
 }
