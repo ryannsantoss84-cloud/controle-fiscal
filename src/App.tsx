@@ -32,7 +32,6 @@ const Installments = lazy(() =>
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Templates = lazy(() => import("./pages/Templates"));
-const Reports = lazy(() => import("./pages/Reports"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -136,7 +135,6 @@ const AppContent = () => {
           <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
           <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
           <Route path="/templates" element={<AppLayout><Templates /></AppLayout>} />
-          <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
