@@ -42,7 +42,7 @@ export default function Deadlines() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [targetDate, setTargetDate] = useState<Date>(new Date());
   const [page, setPage] = useState(1);
-  const itemsPerPage = 12;
+  const itemsPerPage = parseInt(localStorage.getItem("items_per_page") || "12");
 
   const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
     page,

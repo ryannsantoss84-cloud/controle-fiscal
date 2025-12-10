@@ -30,7 +30,7 @@ export default function Taxes() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
     const [page, setPage] = useState(1);
-    const itemsPerPage = 12;
+    const itemsPerPage = parseInt(localStorage.getItem("items_per_page") || "12");
 
     // Filter by type = 'tax'
     const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
