@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useDashboard } from "@/hooks/useDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,7 +14,7 @@ import { formatDate } from "@/lib/utils";
 import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TimelineWidget } from "@/components/dashboard/TimelineWidget";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 // Tipagem para obrigações
 interface Obligation {
@@ -37,6 +38,14 @@ interface Obligation {
 export default function Dashboard() {
   const { stats, isLoading } = useDashboard();
   const navigate = useNavigate();
+  const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
+
+  // Função para verificar se um item está no mês filtrado
+  const isInFilteredMonth = (dueDate: string) => {
+    if (!monthFilter) return true; // Sem filtro, mostra tudo
+    const itemDate = new Date(dueDate + 'T00:00:00');
+    return isSameMonth(itemDate, monthFilter);
+  };
 
   // Buscar próximas obrigações (lista expandida) com tipagem
   const { data: upcomingObligations } = useQuery<Obligation[]>({
@@ -48,7 +57,7 @@ export default function Dashboard() {
         .eq("status", "pending")
         .gte("due_date", new Date().toISOString().split('T')[0])
         .order("due_date", { ascending: true })
-        .limit(10);
+        .limit(50);
       return (data || []) as Obligation[];
     }
   });
@@ -62,14 +71,23 @@ export default function Dashboard() {
         .select("*, clients(name)")
         .eq("status", "overdue")
         .order("due_date", { ascending: true })
-        .limit(5);
+        .limit(20);
       return (data || []) as Obligation[];
     }
   });
 
+  // Filtrar por mês selecionado
+  const filteredUpcoming = useMemo(() => {
+    return (upcomingObligations || []).filter(item => isInFilteredMonth(item.due_date));
+  }, [upcomingObligations, monthFilter]);
+
+  const filteredOverdue = useMemo(() => {
+    return (overdueItems || []).filter(item => isInFilteredMonth(item.due_date));
+  }, [overdueItems, monthFilter]);
+
   // Memoizar dados do timeline para evitar re-renders
   const timelineItems = useMemo(() => {
-    return (upcomingObligations || []).map((item) => ({
+    return filteredUpcoming.map((item) => ({
       id: item.id,
       title: item.title,
       due_date: item.due_date,
@@ -78,7 +96,7 @@ export default function Dashboard() {
       client_name: item.clients?.name,
       sphere: item.sphere
     }));
-  }, [upcomingObligations]);
+  }, [filteredUpcoming]);
 
   if (isLoading) {
     return <div className="space-y-6 animate-fade-in">
@@ -94,10 +112,26 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-slide-up">
-      <PageHeader
-        title="Painel Operacional"
-        description={`Visão focada em execução para hoje, ${format(new Date(), "dd 'de' MMMM", { locale: ptBR })}.`}
-      />
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <PageHeader
+          title="Painel Operacional"
+          description={monthFilter
+            ? `Visualizando: ${format(monthFilter, "MMMM 'de' yyyy", { locale: ptBR })}`
+            : `Visão geral - ${format(new Date(), "dd 'de' MMMM", { locale: ptBR })}`
+          }
+        />
+        <div className="flex items-center gap-2">
+          <MonthPicker
+            date={monthFilter}
+            setDate={setMonthFilter}
+          />
+          {monthFilter && (
+            <Button variant="ghost" size="sm" onClick={() => setMonthFilter(undefined)}>
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Ações Rápidas */}
       <section>
@@ -157,17 +191,17 @@ export default function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         {/* Lista de Atrasados (Se houver) */}
-        {overdueItems && overdueItems.length > 0 && (
+        {filteredOverdue && filteredOverdue.length > 0 && (
           <Card className="border-red-200 bg-red-50/30 dark:bg-red-900/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
                 <AlertCircle className="h-5 w-5" aria-hidden="true" />
-                Atenção: Itens Atrasados
+                Atenção: Itens Atrasados {monthFilter && `(${format(monthFilter, "MMM/yy", { locale: ptBR })})`}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2" role="list" aria-label="Lista de itens atrasados">
-                {overdueItems.map((item) => (
+                {filteredOverdue.map((item) => (
                   <div key={item.id} className="flex items-center justify-between p-3 bg-background rounded-md border border-red-100 shadow-sm" role="listitem">
                     <div>
                       <p className="font-medium text-red-700">{item.title}</p>
@@ -187,8 +221,8 @@ export default function Dashboard() {
         )}
 
         {/* Timeline de Vencimentos */}
-        <div className={overdueItems && overdueItems.length > 0 ? '' : 'col-span-2'}>
-          <TimelineWidget items={timelineItems} />
+        <div className={filteredOverdue && filteredOverdue.length > 0 ? '' : 'col-span-2'}>
+          <TimelineWidget items={timelineItems as any} />
         </div>
       </div>
     </div>
