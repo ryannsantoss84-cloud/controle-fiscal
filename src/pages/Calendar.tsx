@@ -69,8 +69,15 @@ export default function Calendar() {
         if (itemClientId !== clientFilter) return false;
       }
 
-      // Filtro de status
-      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+      // Filtro de status - considerar 'paid' como 'completed' para parcelamentos
+      if (statusFilter !== "all") {
+        if (statusFilter === "completed") {
+          // Para "Concluído", aceitar tanto 'completed' quanto 'paid'
+          if (item.status !== "completed" && item.status !== "paid") return false;
+        } else {
+          if (item.status !== statusFilter) return false;
+        }
+      }
 
       // Busca por texto
       if (searchTerm) {
@@ -264,6 +271,7 @@ export default function Calendar() {
                     <SelectItem value="all">Todos Status</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
                     <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="paid">Pago</SelectItem>
                     <SelectItem value="overdue">Atrasado</SelectItem>
                   </SelectContent>
                 </Select>
