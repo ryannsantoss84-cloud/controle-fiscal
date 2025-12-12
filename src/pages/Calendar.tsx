@@ -271,7 +271,6 @@ export default function Calendar() {
                     <SelectItem value="all">Todos Status</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
                     <SelectItem value="completed">Concluído</SelectItem>
-                    <SelectItem value="paid">Pago</SelectItem>
                     <SelectItem value="overdue">Atrasado</SelectItem>
                   </SelectContent>
                 </Select>
