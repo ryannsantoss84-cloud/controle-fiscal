@@ -36,54 +36,78 @@ interface Obligation {
 }
 
 export default function Dashboard() {
-  const { stats, isLoading } = useDashboard();
   const navigate = useNavigate();
-  const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
+  // Mês atual como padrão
+  const [monthFilter, setMonthFilter] = useState<Date>(new Date());
 
-  // Função para verificar se um item está no mês filtrado
-  const isInFilteredMonth = (dueDate: string) => {
-    if (!monthFilter) return true; // Sem filtro, mostra tudo
-    const itemDate = new Date(dueDate + 'T00:00:00');
-    return isSameMonth(itemDate, monthFilter);
-  };
+  // Datas de início e fim do mês selecionado
+  const monthStart = format(startOfMonth(monthFilter), 'yyyy-MM-dd');
+  const monthEnd = format(endOfMonth(monthFilter), 'yyyy-MM-dd');
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const isCurrentMonth = isSameMonth(monthFilter, new Date());
 
-  // Buscar próximas obrigações (lista expandida) com tipagem
-  const { data: upcomingObligations } = useQuery<Obligation[]>({
-    queryKey: ["dashboard-upcoming"],
+  // Buscar todas as obrigações do mês selecionado
+  const { data: allObligations, isLoading } = useQuery<Obligation[]>({
+    queryKey: ["dashboard-obligations", monthStart, monthEnd],
     queryFn: async () => {
       const { data } = await supabase
         .from("obligations")
         .select("*, clients(name)")
-        .eq("status", "pending")
-        .gte("due_date", new Date().toISOString().split('T')[0])
-        .order("due_date", { ascending: true })
-        .limit(50);
+        .gte("due_date", monthStart)
+        .lte("due_date", monthEnd)
+        .order("due_date", { ascending: true });
       return (data || []) as Obligation[];
     }
   });
 
-  // Buscar itens atrasados com tipagem
-  const { data: overdueItems } = useQuery<Obligation[]>({
-    queryKey: ["dashboard-overdue"],
+  // Buscar todas as parcelas do mês selecionado
+  const { data: allInstallments } = useQuery<any[]>({
+    queryKey: ["dashboard-installments", monthStart, monthEnd],
     queryFn: async () => {
       const { data } = await supabase
-        .from("obligations")
+        .from("installments")
         .select("*, clients(name)")
-        .eq("status", "overdue")
-        .order("due_date", { ascending: true })
-        .limit(20);
-      return (data || []) as Obligation[];
+        .gte("due_date", monthStart)
+        .lte("due_date", monthEnd)
+        .order("due_date", { ascending: true });
+      return (data || []) as any[];
     }
   });
 
-  // Filtrar por mês selecionado
+  // Calcular estatísticas do mês selecionado
+  const monthStats = useMemo(() => {
+    const obligations = allObligations || [];
+    const installments = allInstallments || [];
+
+    const overdueObligations = obligations.filter(o => o.status === 'overdue' || (o.status === 'pending' && o.due_date < today));
+    const overdueInstallments = installments.filter(i => i.status === 'overdue' || (i.status === 'pending' && i.due_date < today));
+
+    const dueTodayObligations = obligations.filter(o => o.due_date === today && o.status === 'pending');
+    const dueTodayInstallments = installments.filter(i => i.due_date === today && i.status === 'pending');
+
+    const pendingObligations = obligations.filter(o => o.status === 'pending');
+    const pendingInstallments = installments.filter(i => i.status === 'pending');
+
+    const completedObligations = obligations.filter(o => o.status === 'completed');
+    const completedInstallments = installments.filter(i => i.status === 'paid');
+
+    return {
+      overdue: overdueObligations.length + overdueInstallments.length,
+      dueToday: dueTodayObligations.length + dueTodayInstallments.length,
+      pending: pendingObligations.length + pendingInstallments.length,
+      completed: completedObligations.length + completedInstallments.length,
+    };
+  }, [allObligations, allInstallments, today]);
+
+  // Filtrar pendentes para timeline
   const filteredUpcoming = useMemo(() => {
-    return (upcomingObligations || []).filter(item => isInFilteredMonth(item.due_date));
-  }, [upcomingObligations, monthFilter]);
+    return (allObligations || []).filter(o => o.status === 'pending' && o.due_date >= today);
+  }, [allObligations, today]);
 
+  // Filtrar atrasados
   const filteredOverdue = useMemo(() => {
-    return (overdueItems || []).filter(item => isInFilteredMonth(item.due_date));
-  }, [overdueItems, monthFilter]);
+    return (allObligations || []).filter(o => o.status === 'overdue' || (o.status === 'pending' && o.due_date < today));
+  }, [allObligations, today]);
 
   // Memoizar dados do timeline para evitar re-renders
   const timelineItems = useMemo(() => {
@@ -123,13 +147,8 @@ export default function Dashboard() {
         <div className="flex items-center gap-2">
           <MonthPicker
             date={monthFilter}
-            setDate={setMonthFilter}
+            setDate={(date) => date && setMonthFilter(date)}
           />
-          {monthFilter && (
-            <Button variant="ghost" size="sm" onClick={() => setMonthFilter(undefined)}>
-              Limpar
-            </Button>
-          )}
         </div>
       </div>
 
@@ -150,8 +169,8 @@ export default function Dashboard() {
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats?.overdue || 0}</div>
-            <p className="text-xs text-muted-foreground">Requerem atenção imediata</p>
+            <div className="text-2xl font-bold text-red-600">{monthStats.overdue}</div>
+            <p className="text-xs text-muted-foreground">No mês selecionado</p>
           </CardContent>
         </Card>
 
@@ -161,7 +180,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats?.due_today || 0}</div>
+            <div className="text-2xl font-bold text-orange-600">{monthStats.dueToday}</div>
             <p className="text-xs text-muted-foreground">Prioridade do dia</p>
           </CardContent>
         </Card>
@@ -172,8 +191,8 @@ export default function Dashboard() {
             <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats?.total_pending || 0}</div>
-            <p className="text-xs text-muted-foreground">Total em aberto</p>
+            <div className="text-2xl font-bold text-blue-600">{monthStats.pending}</div>
+            <p className="text-xs text-muted-foreground">No mês selecionado</p>
           </CardContent>
         </Card>
 
@@ -183,8 +202,8 @@ export default function Dashboard() {
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.completed_month || 0}</div>
-            <p className="text-xs text-muted-foreground">Neste mês</p>
+            <div className="text-2xl font-bold text-green-600">{monthStats.completed}</div>
+            <p className="text-xs text-muted-foreground">No mês selecionado</p>
           </CardContent>
         </Card>
       </div>
