@@ -29,6 +29,7 @@ interface UseInstallmentsOptions {
   page?: number;
   pageSize?: number;
   obligationId?: string;
+  monthFilter?: Date;
 }
 
 export function useInstallments(options: UseInstallmentsOptions | string = {}) {
@@ -36,12 +37,12 @@ export function useInstallments(options: UseInstallmentsOptions | string = {}) {
   const queryClient = useQueryClient();
 
   // Handle both object options and legacy string obligationId
-  const { page = 1, pageSize = 50, obligationId } = typeof options === 'string'
-    ? { obligationId: options, page: 1, pageSize: 50 }
+  const { page = 1, pageSize = 50, obligationId, monthFilter } = typeof options === 'string'
+    ? { obligationId: options, page: 1, pageSize: 50, monthFilter: undefined }
     : options;
 
   const { data: installments = [], isLoading } = useQuery({
-    queryKey: ["installments", obligationId, page, pageSize],
+    queryKey: ["installments", obligationId, page, pageSize, monthFilter],
     queryFn: async () => {
       let query = supabase
         .from("installments")
@@ -64,6 +65,12 @@ export function useInstallments(options: UseInstallmentsOptions | string = {}) {
 
       if (obligationId) {
         query = query.eq("obligation_id", obligationId);
+      }
+
+      if (monthFilter) {
+        const start = new Date(monthFilter.getFullYear(), monthFilter.getMonth(), 1).toISOString();
+        const end = new Date(monthFilter.getFullYear(), monthFilter.getMonth() + 1, 0).toISOString(); // Last day of month
+        query = query.gte("due_date", start).lte("due_date", end);
       }
 
       // Pagination

@@ -13,26 +13,27 @@ import { Calendar, FileText } from "lucide-react";
 import { SortableColumn } from "@/components/shared/SortableColumn";
 import { SortDirection } from "@/hooks/useSorting";
 
-interface Installment {
-    id: string;
-    name: string | null;
-    protocol: string | null;
-    due_date: string;
-    amount: number;
-    status: string;
-    deadline?: {
-        title: string;
-        clients?: {
-            name: string;
-        };
-    };
-    clients?: {
-        name: string;
-    };
-}
+import { Installment as SharedInstallment } from "@/hooks/useInstallments";
+
+// Extend or alias the shared type if needed, or just use it directly.
+// The local interface had 'deadline' structure that might be slightly different or just enriched.
+// Let's check the local definition vs shared.
+// Local:
+// deadline?: { title: string; clients?: { name: string; }; };
+// Shared Installment doesn't have deadline.
+// But EnrichedInstallment in Installments.tsx adds deadline.
+// InstallmentTable receives `installments` which are `EnrichedInstallment[]`.
+
+// So we should define the prop type based on what is passed.
+import { Deadline } from "@/hooks/useDeadlines";
+
+type TableInstallment = SharedInstallment & {
+    deadline?: Deadline;
+};
+
 
 interface InstallmentTableProps {
-    installments: Installment[];
+    installments: TableInstallment[];
     sortConfig: { key: string; direction: SortDirection };
     onSort: (key: string) => void;
     selectedIds?: Set<string>;

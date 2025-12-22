@@ -15,7 +15,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { useSorting } from "@/hooks/useSorting";
 import { useBulkActions } from "@/hooks/useBulkActions";
+
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 type EnrichedInstallment = Installment & {
   deadline?: Deadline;
@@ -25,10 +27,14 @@ export default function Installments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [formOpen, setFormOpen] = useState(false);
 
-  const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments({ pageSize: 1000 });
+  const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments({
+    pageSize: 1000,
+    monthFilter
+  });
   const { deadlines } = useDeadlines();
   const { clients } = useClients({ pageSize: 1000 });
 
@@ -187,7 +193,14 @@ export default function Installments() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
+
         </div>
+
+        <MonthPicker
+          date={monthFilter}
+          setDate={setMonthFilter}
+        />
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Status" />
