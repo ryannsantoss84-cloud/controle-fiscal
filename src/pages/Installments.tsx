@@ -10,7 +10,7 @@ import { useClients } from "@/hooks/useClients";
 import { InstallmentCard } from "@/components/installments/InstallmentCard";
 import { InstallmentTable } from "@/components/installments/InstallmentTable";
 import { InstallmentForm } from "@/components/forms/InstallmentForm";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FilterBar } from "@/components/layout/FilterBar";
 import { useSorting } from "@/hooks/useSorting";
@@ -212,19 +212,40 @@ export default function Installments() {
             <SelectItem value="overdue">Atrasado</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={clientFilter} onValueChange={setClientFilter}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Cliente" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os Clientes</SelectItem>
-            {clients?.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <Select value={clientFilter} onValueChange={setClientFilter}>
+            <SelectTrigger className="w-full sm:w-[200px] pr-8">
+              <SelectValue placeholder="Cliente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Clientes</SelectItem>
+              {clients?.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {clientFilter !== "all" && (
+            <div
+              role="button"
+              tabIndex={0}
+              className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full cursor-pointer z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                setClientFilter("all");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  setClientFilter("all");
+                }
+              }}
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </div>
+          )}
+        </div>
       </FilterBar>
 
       <BulkActionBar

@@ -20,7 +20,7 @@ import { Deadline } from "@/hooks/useDeadlines";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 import { MonthPicker } from "@/components/ui/month-picker";
-import { User, CheckCircle2, Search, FileText } from "lucide-react";
+import { User, CheckCircle2, Search, FileText, X } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export default function Taxes() {
@@ -137,20 +137,43 @@ export default function Taxes() {
                     setDate={(date) => { setMonthFilter(date); setPage(1); }}
                 />
 
-                <Select value={clientFilter} onValueChange={(v) => { setClientFilter(v); setPage(1); }}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
-                        <div className="flex items-center gap-2 truncate">
-                            <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <SelectValue placeholder="Cliente" />
+                <div className="relative">
+                    <Select value={clientFilter} onValueChange={(v) => { setClientFilter(v); setPage(1); }}>
+                        <SelectTrigger className="w-full sm:w-[200px] pr-8">
+                            <div className="flex items-center gap-2 truncate">
+                                <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <SelectValue placeholder="Cliente" />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os clientes</SelectItem>
+                            {clients.map((client) => (
+                                <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {clientFilter !== "all" && (
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full cursor-pointer z-10"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setClientFilter("all");
+                                setPage(1);
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.stopPropagation();
+                                    setClientFilter("all");
+                                    setPage(1);
+                                }
+                            }}
+                        >
+                            <X className="h-3 w-3 text-muted-foreground" />
                         </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os clientes</SelectItem>
-                        {clients.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                    )}
+                </div>
 
                 <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
                     <SelectTrigger className="w-[160px]">
