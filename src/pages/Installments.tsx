@@ -28,7 +28,7 @@ export default function Installments() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [formOpen, setFormOpen] = useState(false);
 
-  const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments();
+  const { installments, isLoading, deleteInstallment, updateInstallment } = useInstallments({ pageSize: 1000 });
   const { deadlines } = useDeadlines();
   const { clients } = useClients({ pageSize: 1000 });
 
@@ -116,7 +116,7 @@ export default function Installments() {
   const stats = {
     total: installments.length,
     pending: installments.filter(i => i.status === "pending").length,
-    completed: installments.filter(i => i.status === "paid" || i.status === "completed").length,
+    completed: installments.filter(i => i.status === "paid").length,
     overdue: installments.filter(i => i.status === "overdue").length,
   };
 

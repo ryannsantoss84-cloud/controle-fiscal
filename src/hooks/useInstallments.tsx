@@ -18,6 +18,11 @@ export interface Installment {
   created_at: string;
   updated_at: string;
   name?: string; // Adicionado para parcelas avulsas
+  protocol?: string;
+  clients?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface UseInstallmentsOptions {
@@ -67,7 +72,7 @@ export function useInstallments(options: UseInstallmentsOptions | string = {}) {
 
       const { data, error } = await query.range(from, to);
       if (error) throw error;
-      return data;
+      return data as Installment[];
     },
     placeholderData: (previousData) => previousData, // Mantém dados antigos enquanto carrega novos (UX melhor)
   });

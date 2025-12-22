@@ -35,7 +35,8 @@ export default function Taxes() {
     // Filter by type = 'tax'
     const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
         typeFilter: 'tax',
-        monthFilter
+        monthFilter,
+        pageSize: 1000
     });
     const { clients } = useClients({ pageSize: 1000 });
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');
