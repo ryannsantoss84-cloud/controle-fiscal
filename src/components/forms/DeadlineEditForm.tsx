@@ -6,6 +6,7 @@ import * as z from "zod";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -153,6 +154,9 @@ export function DeadlineEditForm({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Prazo</DialogTitle>
+          <DialogDescription>
+            Atualize as informações do prazo fiscal
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -189,7 +193,7 @@ export function DeadlineEditForm({
                     <FormLabel>Esfera</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      value={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>

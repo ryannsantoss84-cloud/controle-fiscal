@@ -5,6 +5,7 @@ import * as z from "zod";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -98,6 +99,8 @@ export function DeadlineForm() {
       has_installments: false,
       installment_count: "1",
       client_ids: [],
+      client_id: "",
+      sphere: undefined,
     },
   });
 
@@ -266,6 +269,9 @@ export function DeadlineForm() {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo Prazo Fiscal</DialogTitle>
+          <DialogDescription>
+            Preencha os dados para criar um novo prazo fiscal
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -330,7 +336,7 @@ export function DeadlineForm() {
                     <FormLabel>Esfera</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      value={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>

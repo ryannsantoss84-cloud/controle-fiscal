@@ -35,7 +35,8 @@ export default function Obligations() {
     // Filter by type = 'obligation'
     const { deadlines, deleteDeadline, updateDeadline } = useDeadlines({
         typeFilter: 'obligation',
-        monthFilter
+        monthFilter,
+        pageSize: 1000
     });
     const { clients } = useClients({ pageSize: 1000 });
     const { sortConfig, handleSort, sortData } = useSorting<Deadline>('due_date');

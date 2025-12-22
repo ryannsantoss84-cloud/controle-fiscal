@@ -11,6 +11,7 @@ export interface Installment {
   total_installments: number;
   amount: number;
   due_date: string;
+  original_due_date?: string | null;
   paid_at?: string;
   time_to_payment_minutes?: number | null;
   status: "pending" | "paid" | "overdue";
