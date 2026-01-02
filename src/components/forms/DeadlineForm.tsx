@@ -167,6 +167,17 @@ export function DeadlineForm() {
   const hasInstallments = form.watch("has_installments");
   const mode = form.watch("mode");
   const selectedClientIds = form.watch("client_ids") || [];
+  const [regimeFilter, setRegimeFilter] = useState<string>("all");
+
+  // Auto-select clients when regime filter changes
+  useEffect(() => {
+    if (regimeFilter === "all") return;
+
+    const filteredClients = clients.filter(c => c.tax_regime === regimeFilter);
+    const ids = filteredClients.map(c => c.id);
+
+    form.setValue("client_ids", ids); // Replace current selection with filtered list
+  }, [regimeFilter, clients, form]);
 
   const dueDateIsWeekend = watchedDueDate && isWeekend(watchedDueDate);
   const adjustedDate =
@@ -483,6 +494,28 @@ export function DeadlineForm() {
                 render={() => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Clientes Selecionados ({selectedClientIds.length}) *</FormLabel>
+
+                    <div className="mb-2">
+                      <Select value={regimeFilter} onValueChange={setRegimeFilter}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Filtrar por Regime Tributário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos os Regimes (Seleção Manual)</SelectItem>
+                          <SelectItem value="simples_nacional">Simples Nacional</SelectItem>
+                          <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                          <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                          <SelectItem value="mei">MEI</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {regimeFilter !== 'all' && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Selecionando automaticamente clientes do regime: {regimeFilter}
+                        </p>
+                      )}
+                    </div>
+
                     <Popover open={multiSelectOpen} onOpenChange={setMultiSelectOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
