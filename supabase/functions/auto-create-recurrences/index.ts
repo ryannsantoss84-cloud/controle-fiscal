@@ -13,11 +13,9 @@ serve(async (req) => {
 
     console.log(`Running auto-create-recurrences. Date: ${today.toISOString()}, Is first day: ${isFirstDayOfMonth}`);
 
+    // Allow running on any day to support manual triggers or retries
     if (!isFirstDayOfMonth) {
-      return new Response(
-        JSON.stringify({ message: "Not the first day of month, skipping", date: today.toISOString() }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      console.log("Not the first day of month, but continuing execution for manual trigger/retry.");
     }
 
     let createdCount = 0;
