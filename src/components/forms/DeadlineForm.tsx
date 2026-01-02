@@ -39,7 +39,8 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,7 @@ export function DeadlineForm() {
   const { toast } = useToast();
   const [duplicationCheck, setDuplicationCheck] = useState<DuplicationCheck | null>(null);
   const [pendingSubmission, setPendingSubmission] = useState<z.infer<typeof formSchema> | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,6 +105,62 @@ export function DeadlineForm() {
       sphere: undefined,
     },
   });
+
+  // Check for URL params to pre-fill form (e.g. coming from Templates)
+  useEffect(() => {
+    const title = searchParams.get("title");
+    if (title && !open) {
+      const type = searchParams.get("type") as "obligation" | "tax" || "obligation";
+      const description = searchParams.get("description") || "";
+      const recurrence = searchParams.get("recurrence") as any || "none";
+      const sphere = searchParams.get("sphere") as any;
+      const day = searchParams.get("day");
+
+      // Set form values
+      form.reset({
+        mode: "single",
+        title,
+        type,
+        description,
+        recurrence,
+        sphere,
+        weekend_handling: "next_business_day",
+        has_installments: false,
+        installment_count: "1",
+        client_ids: [],
+        client_id: "",
+        // If day is provided, we can't set due_date directly as Date object without current month/year context
+        // But the user will likely pick the date manually anyway.
+        // We could try to set a smart default if day exists.
+        due_date: new Date(),
+      });
+
+      // If we have a day preference, try to set it for current month
+      if (day) {
+        const today = new Date();
+        const targetDate = new Date(today.getFullYear(), today.getMonth(), parseInt(day));
+        if (targetDate < today) {
+          // If day passed, suggest next month
+          targetDate.setMonth(targetDate.getMonth() + 1);
+        }
+        form.setValue("due_date", targetDate);
+      }
+
+      setOpen(true);
+
+      // Clear params to avoid reopening on refresh
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete("title");
+        newParams.delete("type");
+        newParams.delete("description");
+        newParams.delete("recurrence");
+        newParams.delete("sphere");
+        newParams.delete("day");
+        return newParams;
+      });
+    }
+  }, [searchParams, form, open, setSearchParams]);
 
   const watchedDueDate = form.watch("due_date");
   const watchedWeekendHandling = form.watch("weekend_handling");

@@ -42,7 +42,9 @@ export default function Templates() {
     const [recurrenceFilter, setRecurrenceFilter] = useState("all");
 
     const handleUseTemplate = (template: Template) => {
-        // Navegar para criação de prazo com dados pré-preenchidos
+        // Navegar para a página correta (Obrigações ou Impostos)
+        const path = template.type === "tax" ? "/taxes" : "/obligations";
+
         const params = new URLSearchParams({
             title: template.name,
             description: template.description || "",
@@ -51,7 +53,7 @@ export default function Templates() {
             day: template.day_of_month?.toString() || "",
             sphere: template.items?.[0]?.sphere || "",
         });
-        navigate(`/deadlines?${params.toString()}`);
+        navigate(`${path}?${params.toString()}`);
     };
 
     const handleEdit = (template: Template) => {
