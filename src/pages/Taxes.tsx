@@ -19,6 +19,7 @@ import { useSorting } from "@/hooks/useSorting";
 import { Deadline } from "@/hooks/useDeadlines";
 import { useBulkActions } from "@/hooks/useBulkActions";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { BulkEditDialog, BulkEditField } from "@/components/shared/BulkEditDialog";
 import { MonthPicker } from "@/components/ui/month-picker";
 import { User, CheckCircle2, Search, FileText, X } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -30,6 +31,7 @@ export default function Taxes() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
     const [page, setPage] = useState(1);
+    const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
     const itemsPerPage = parseInt(localStorage.getItem("items_per_page") || "12");
 
     // Filter by type = 'tax'
@@ -102,6 +104,28 @@ export default function Taxes() {
         },
         "Impostos reabertos com sucesso!",
         "Erro ao reabrir impostos"
+    );
+
+    const handleBulkEdit = (field: BulkEditField, value: any) => executeBulkAction(
+        async (ids) => {
+            await Promise.all(ids.map(id => {
+                const updates: any = { id };
+
+                if (field === 'status') {
+                    updates.status = value;
+                    if (value === 'completed') updates.completed_at = new Date().toISOString();
+                    else if (value === 'pending') updates.completed_at = null;
+                } else if (field === 'due_date') {
+                    updates.due_date = value.toISOString();
+                } else {
+                    (updates as any)[field] = value;
+                }
+
+                return updateDeadline.mutateAsync(updates);
+            }));
+        },
+        "Edição em massa concluída!",
+        "Erro ao editar impostos"
     );
 
     // Paginação
@@ -198,6 +222,14 @@ export default function Taxes() {
                 onDelete={handleBulkDelete}
                 onComplete={handleBulkComplete}
                 onReopen={handleBulkReopen}
+                onEdit={() => setIsBulkEditOpen(true)}
+            />
+
+            <BulkEditDialog
+                open={isBulkEditOpen}
+                onOpenChange={setIsBulkEditOpen}
+                selectedCount={selectedCount}
+                onConfirm={handleBulkEdit}
             />
 
             {filteredDeadlines.length === 0 ? (

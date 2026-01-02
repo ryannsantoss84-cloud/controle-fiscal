@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, RotateCcw, Trash2, X, ChevronDown } from "lucide-react";
+import { CheckCircle2, RotateCcw, Trash2, X, ChevronDown, Pencil } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,6 +13,7 @@ interface BulkActionBarProps {
     onDelete?: () => void;
     onComplete?: () => void;
     onReopen?: () => void;
+    onEdit?: () => void;
 }
 
 export function BulkActionBar({
@@ -21,6 +22,7 @@ export function BulkActionBar({
     onDelete,
     onComplete,
     onReopen,
+    onEdit,
 }: BulkActionBarProps) {
     if (selectedCount === 0) return null;
 
@@ -41,6 +43,13 @@ export function BulkActionBar({
                             <DropdownMenuItem onClick={onComplete} className="gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-success" />
                                 Concluir Selecionados
+                            </DropdownMenuItem>
+                        )}
+                        {/* Edit Action */}
+                        {onEdit && (
+                            <DropdownMenuItem onClick={onEdit} className="gap-2">
+                                <Pencil className="h-4 w-4" />
+                                Editar Selecionados
                             </DropdownMenuItem>
                         )}
                         {onReopen && (
